@@ -1,0 +1,118 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "BornFree"
+version = "1.0.0"
+description = "Beyond Born-Oppenheimer Real-space Neural-network Framework for Enthalpy Extremization: A first-principles quantum Monte Carlo study of high-pressure solid hydrogen"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "Apache-2.0" }
+maintainers = [
+  { name = "Shengdu Chai", email = "sdchai24@m.fudan.edu.cn" }
+]
+keywords = [
+  "quantum-monte-carlo",
+  "neural-network",
+  "high-pressure-physics",
+  "hydrogen",
+  "variational-monte-carlo",
+  "nuclear-quantum-effects",
+  "beyond-born-oppenheimer",
+  "deep-learning",
+  "materials-science",
+  "computational-physics"
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Science/Research",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "License :: OSI Approved :: Apache Software License",
+  "Operating System :: POSIX :: Linux",
+  "Topic :: Scientific/Engineering :: Physics",
+  "Topic :: Scientific/Engineering :: Chemistry",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence"
+]
+dependencies = [
+  "jax==0.4.35",
+  "jaxlib==0.4.34",
+  "jax-cuda12-plugin[with_cuda]==0.4.36",
+  "jax-cuda12-pjrt==0.4.36",
+  "kfac_jax==0.0.6",
+  "folx",
+  "chex",
+  "numpy~=2.0",
+  "scipy",
+  "pandas",
+  "omegaconf~=2.3",
+  "universal_pathlib~=0.2.2",
+  "ml_collections",
+  "pyscf==2.8.0",
+  "ase",
+  "pymatgen==2025.2.18",
+  "matplotlib",
+  "wandb",
+  "tables",
+  "h5py",
+  "absl-py",
+  "attrs",
+  "dataclasses",
+  "networkx",
+  "ordered-set",
+  "typing",
+  "optax",
+  "pymatviz",
+  # NVIDIA CUDA packages (for GPU support)
+  "nvidia-cuda-cupti-cu12==12.8.90",
+  "nvidia-cuda-nvcc-cu12==12.8.93",
+  "nvidia-cuda-runtime-cu12==12.8.90"
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=7.0",
+  "pytest-cov",
+  "flake8",
+  "black",
+  "ruff",
+  "jupyter",
+]
+
+
+
+[tool.setuptools]
+include-package-data = true
+script-files = ["bin/bornfree"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["BornFree*"]
+exclude = ["tests*", "*.tests*", "*.tests.*"]
+
+[tool.setuptools.package-data]
+BornFree = ["py.typed"]
+
+[tool.ruff]
+select = ["E", "F", "I", "W", "D"]
+ignore = ["E731", "E501", "E402","D100","D105"]
+
+# Maximum line length
+line-length = 88
+target-version = "py311"
+
+# Exclude directories from linting
+exclude = [
+    ".git",
+    ".venv",
+    "venv",
+    "env",
+    "__pycache__",
+    "build",
+    "dist",
+    "*.egg-info",
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"

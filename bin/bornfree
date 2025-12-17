@@ -1,0 +1,118 @@
+# Copyright (c) ByteDance, Inc. and its affiliates.
+# All rights reserved.
+#
+# This source code is licensed under the license found in the
+# LICENSE file in the root directory of this source tree.
+
+# modified from FermiNet:https://github.com/deepmind/ferminet
+
+# This file may have been modified by Shengdu Chai.
+# Modifications Copyright (c) 2025 Shengdu Chai
+
+import sys
+from pathlib import Path
+from typing import Any
+
+from absl import app
+from absl import flags
+from absl import logging
+import logging as jax_logging
+import jax
+from ml_collections.config_flags import config_flags
+import os
+
+# Add project root to Python path
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+sys.path.append(str(PROJECT_ROOT))
+
+from BornFree import process_nvt, process_npt
+from BornFree import base_config
+
+def env_setup():
+    addr=os.getenv("MASTER_ADDR")
+    port="6000"
+    coordinator_address = f"{addr}:{port}"
+    num_process = int(os.getenv("NODE_COUNT"))
+    process_id = int(os.getenv("NODE_RANK"))
+    return coordinator_address, num_process, process_id
+
+# Configure logging
+def setup_logging():
+    """Configure logging settings."""
+    jax_logger = jax_logging.getLogger('jax')
+    jax_logger.setLevel(jax_logging.INFO)
+    logging.get_absl_handler().python_handler.stream = sys.stdout
+    logging.set_verbosity(logging.INFO)
+
+# Define flags
+FLAGS = flags.FLAGS
+config_flags.DEFINE_config_file('config', None, 'Path to config file.')
+
+def setup_environment(cfg: base_config.BornFreeConfig) -> None:
+    """Setup environment variables and JAX configuration.
+    
+    Args:
+        cfg: Configuration object containing settings
+    """
+    logging.info("Initializing JAX distributed training")
+    #if the env is found, use it, otherwise, use the default
+    if os.getenv("MASTER_ADDR"):
+        coordinator_address, num_process, process_id = env_setup()  
+        jax.distributed.initialize(coordinator_address=coordinator_address, num_processes=num_process, process_id=process_id)
+    else:
+        pass
+    if cfg.use_x64:
+        jax.config.update("jax_enable_x64", True)
+    else:
+        jax.config.update("jax_enable_x64", False)
+        jax.config.update("jax_default_matmul_precision", "float32")
+
+def get_process_function(ensemble_type: str):
+    """Get the appropriate process function based on ensemble type.
+    
+    Args:
+        ensemble_type: Type of ensemble ('NVT', 'NPT')
+    
+    Returns:
+        Process function to use
+        
+    Raises:
+        ValueError: If ensemble_type is not recognized
+    """
+    process_functions = {
+        'NVT': process_nvt.process,
+        'NPT':process_npt.process,
+    }
+    
+    if ensemble_type not in process_functions:
+        raise ValueError(f"Unsupported ensemble type: {ensemble_type}. "
+                        f"Must be one of {list(process_functions.keys())}")
+    
+    return process_functions[ensemble_type]
+
+def main(_: Any) -> None:
+    """Main entry point of the program.
+    
+    Args:
+        _: Unused argument required by absl.app
+    """
+    # Setup logging
+    setup_logging()
+    
+    # Get configuration
+    cfg = FLAGS.config
+    cfg = base_config.config_dict_to_dataclass(cfg)
+    # Setup environment
+    setup_environment(cfg)
+    
+    try:
+        # Get and run appropriate process function
+        process_fn = get_process_function(cfg.ensemble)
+        process_fn(cfg)
+        logging.info('Process completed successfully')
+    except Exception as e:
+        logging.error(f'Process failed with error: {str(e)}')
+        raise
+
+if __name__ == '__main__':
+    app.run(main)
