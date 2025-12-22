@@ -135,9 +135,14 @@ BornFree/
 If you use BornFree in your research, please cite:
 
 ```bibtex
-@article{chai_revisiting_,
-  title = {Revisiting the Broken Symmetry Phase of Solid Hydrogen: A Neural Network Variational Monte Carlo Study},
-  author = {Chai, Shengdu and Lin, Chen and Dong, Xinyang and Li, Yuqiang and Ouyang, Wanli and Wang, Lei and Xie, X. C.}
+@misc{chai2025revisitingbrokensymmetryphase,
+      title={Revisiting the Broken Symmetry Phase of Solid Hydrogen: A Neural Network Variational Monte Carlo Study}, 
+      author={Shengdu Chai and Chen Lin and Xinyang Dong and Yuqiang Li and Wanli Ouyang and Lei Wang and X. C. Xie},
+      year={2025},
+      eprint={2512.17703},
+      archivePrefix={arXiv},
+      primaryClass={cond-mat.str-el},
+      url={https://arxiv.org/abs/2512.17703}, 
 }
 
 ```
