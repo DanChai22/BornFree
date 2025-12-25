@@ -1,8 +1,6 @@
-# Copyright (c) ByteDance, Inc. and its affiliates.
-# All rights reserved.
+# Copyright (c) 2025 Shengdu Chai
 #
-# This source code is licensed under the license found in the
-# LICENSE file in the root directory of this source tree.
+# Licensed under the Apache License, Version 2.0.
 """BornFree: Beyond Born-Oppenheimer Real-space Neural-network Framework for Enthalpy Extremization.
 
 A quantum Monte Carlo package for studying high-pressure materials including nuclear quantum effects.

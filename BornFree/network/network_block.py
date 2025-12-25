@@ -20,6 +20,7 @@
 """Implementation of Fermionic Neural Network blocks and utilities in JAX."""
 
 import functools
+import operator
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from typing import Any
 
@@ -34,9 +35,9 @@ from BornFree.base_config import CrystalLatticeConfig
 
 FermiLayers = tuple[tuple[int, int], ...]
 # Recursive types are not yet supported in pytype - b/109648354.
-# pytype: disable=not-supported-yet
+# pytype: disable=not-supported-yet  # noqa: ERA001
 ParamTree = Array | Iterable["ParamTree"] | Mapping[Any, "ParamTree"]
-# pytype: enable=not-supported-yet
+# pytype: enable=not-supported-yet  # noqa: ERA001
 # init(key) -> params
 FermiNetInit = Callable[[Array], ParamTree]
 # network(params, x) -> sign_out, log_out
@@ -248,12 +249,12 @@ def _compute_periodic_features_core(
     compute_aa: bool = True,
 ) -> tuple[Array, Array, Array | None, Array, Array, Array | None]:
     """Core logic to compute periodic features."""
-    # ea (Electron-Atom)
+    # ea (Electron-Atom)  # noqa: ERA001
     sim_xea = sim_elec[..., None, :] - sim_atom
     sim_periodic_sea, sim_periodic_xea = distance_func(sim_xea, sim_AV, sim_BV)
     sim_periodic_sea = sim_periodic_sea[..., None]
 
-    # ee (Electron-Electron)
+    # ee (Electron-Electron)  # noqa: ERA001
     nelec = sim_elec.shape[0]
     if mask_elec is None:
         mask_elec = 1.0 - jnp.eye(nelec, dtype=sim_elec.dtype)
@@ -266,7 +267,7 @@ def _compute_periodic_features_core(
     sim_periodic_see = sim_periodic_see[..., None]
     sim_periodic_xee = sim_periodic_xee * mask_elec[..., None]
 
-    # aa (Atom-Atom)
+    # aa (Atom-Atom)  # noqa: ERA001
     sim_periodic_xaa = None
     sim_periodic_saa = None
 
@@ -666,7 +667,7 @@ def _init_elec_params(
     active_spin_channels = [spin for spin in spins if spin > 0]
     nchannels = len(active_spin_channels)
     # The input to layer L of the one-electron stream is from
-    # construct_symmetric_features and shape (nelectrons, nfeatures), where
+    # construct_symmetric_features and shape (nelectrons, nfeatures), where  # noqa: ERA001
     # nfeatures is i) output from the previous one-electron layer; ii) the mean
     # for each spin channel from each layer; iii) the mean for each spin channel
     # from each two-electron layer. We don't create features for spin channels
@@ -967,7 +968,7 @@ def logdet_matmul(
     # Pass initial value to functools so det1d = 1 if all matrices are larger than
     # 1x1.
     det1d = functools.reduce(
-        lambda a, b: a * b, [x.reshape(-1) for x in xs if x.shape[-1] == 1], 1
+        operator.mul, [x.reshape(-1) for x in xs if x.shape[-1] == 1], 1
     )
     # Pass initial value to functools so sign_in = 1, logdet = 0 if all matrices
     # are 1x1.

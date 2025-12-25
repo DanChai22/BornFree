@@ -42,6 +42,8 @@ from BornFree.utils import (
     writers,
 )
 
+logger = logging.getLogger(__name__)
+
 
 def process(cfg: base_config.BornFreeConfig) -> None:
     """Runs the main NVT simulation process.
@@ -87,13 +89,13 @@ def process(cfg: base_config.BornFreeConfig) -> None:
             run_id_to_resume,
         ) = checkpoint.restore(ckpt_restore_filename, host_batch_size)
         if run_id_to_resume:
-            logging.info(f"Found Wandb Run ID {run_id_to_resume} in checkpoint.")
+            logger.info("Found Wandb Run ID %s in checkpoint.", run_id_to_resume)
         else:
-            logging.warning(
+            logger.warning(
                 "No Wandb Run ID found in checkpoint. A new run will be created."
             )
     else:
-        logging.info("No checkpoint found. Training new model.")
+        logger.info("No checkpoint found. Training new model.")
         key, subkey = jax.random.split(key)
         # make sure data on each host is initialized differently
         subkey = jax.random.fold_in(subkey, jax.process_index())
@@ -117,7 +119,7 @@ def process(cfg: base_config.BornFreeConfig) -> None:
     sharded_key = kfac_jax.utils.make_different_rng_key_on_all_devices(key)
 
     # Set up MCMC, loss, and optimization
-    logging.info("create mcmc functions")
+    logger.info("create mcmc functions")
     mcmc_step = mcmc_utils.setup_mcmc_step(
         cfg, batched_networks, device_batch_size, simulation_cell, precision
     )
@@ -152,7 +154,7 @@ def process(cfg: base_config.BornFreeConfig) -> None:
 
     # MCMC burn-in
     if t_init == 0:
-        logging.info("Burning in MCMC chain for %d steps...", cfg.mcmc.burn_in)
+        logger.info("Burning in MCMC chain for %d steps...", cfg.mcmc.burn_in)
         burn_in_step = training_step_utils.create_training_step(
             mcmc_step=mcmc_step, optimizer_step=optimizer_utils.null_update
         )
@@ -161,7 +163,7 @@ def process(cfg: base_config.BornFreeConfig) -> None:
             data, params, *_ = burn_in_step(
                 data, params, state=None, key=subkeys, mcmc_width=mcmc_width
             )
-        logging.info("Completed MCMC burn-in.")
+        logger.info("Completed MCMC burn-in.")
 
     time_of_last_ckpt = time.time()
 
@@ -170,12 +172,12 @@ def process(cfg: base_config.BornFreeConfig) -> None:
         # run (most likely due to preemption) and so should continue from the last
         # iteration in the checkpoint. Otherwise, starting an inference run from a
         # training run.
-        logging.info("No optimizer provided. Assuming inference run.")
-        logging.info("Setting initial iteration to 0.")
+        logger.info("No optimizer provided. Assuming inference run.")
+        logger.info("Setting initial iteration to 0.")
         t_init = 0
 
     # Main training loop
-    logging.info("Starting optimization...")
+    logger.info("Starting optimization...")
     train_schema = [
         "step",
         "energy",

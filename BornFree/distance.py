@@ -34,6 +34,8 @@ import jax.numpy as jnp
 import numpy as np
 from jax import Array
 
+logger = logging.getLogger(__name__)
+
 
 class MinimalImageDistance:
     """Computes minimal image distances under periodic boundary conditions.
@@ -68,7 +70,7 @@ class MinimalImageDistance:
             if diagonal:
                 self.dist_i = self.diagonal_dist_i
                 if verbose == 0:
-                    logging.info("Diagonal lattice vectors")
+                    logger.info("Diagonal lattice vectors")
             else:
                 orthogonal = (
                     jnp.dot(latvec[0], latvec[1]) < ortho_tol
@@ -78,11 +80,11 @@ class MinimalImageDistance:
                 if orthogonal:
                     self.dist_i = self.orthogonal_dist_i
                     if verbose == 0:
-                        logging.info("Orthogonal lattice vectors")
+                        logger.info("Orthogonal lattice vectors")
                 else:
                     self.dist_i = self.general_dist_i
                     if verbose == 0:
-                        logging.info("Non-orthogonal lattice vectors")
+                        logger.info("Non-orthogonal lattice vectors")
         else:
             # Always use general method for dynamic lattices
             self.dist_i = self.general_dist_i
@@ -117,9 +119,9 @@ class MinimalImageDistance:
         mininds = jnp.argmin(dists, axis=0)
         inds = jnp.meshgrid(*[jnp.arange(n) for n in mininds.shape], indexing="ij")
         if return_wrap:
-            return d1all[(mininds, *inds)], -self.point_list[mininds]
+            return d1all[mininds, *inds], -self.point_list[mininds]
         else:
-            return d1all[(mininds, *inds)]
+            return d1all[mininds, *inds]
 
     def orthogonal_dist_i(self, configs, vec, return_wrap=False):
         """Calculates minimal distances for orthogonal lattices (faster).
@@ -166,7 +168,7 @@ class MinimalImageDistance:
         if not return_wrap:
             return replace_d1
         else:
-            ## minus applies after //, order of // and - sign matters
+            # minus applies after //, order of // and - sign matters
             wrap = -((d1 + latvec_diag / 2) // latvec_diag)
             return replace_d1, wrap
 
@@ -197,9 +199,7 @@ class MinimalImageDistance:
             r_ae: electron-atom distances with shape (ncell, nelec, natom, 1)
 
         """
-        # shape (ncell, natom, 3)
         extended_atoms = atoms + self.shifts[:, None, :]
-        # shape (ncell, nelec, natom, 3)
         ae = jnp.reshape(electrons, [-1, 1, 3]) - extended_atoms[:, None, ...]
         r_ae = jnp.linalg.norm(ae, axis=-1, keepdims=True)
         return ae, r_ae

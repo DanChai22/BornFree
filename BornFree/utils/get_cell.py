@@ -18,6 +18,8 @@ from BornFree.config import (
 )
 from BornFree.constants import HYDROGEN_CIF_DIR
 
+logger = logging.getLogger(__name__)
+
 
 class SimulationCellGenerator:
     """Generator for various types of simulation cells used in quantum Monte Carlo calculations.
@@ -115,7 +117,7 @@ class SimulationCellGenerator:
         if rs <= 0:
             raise ValueError("rs must be positive")
         if not os.path.isfile(cif_path):
-            logging.error(f"CIF file not found at path: {cif_path}")
+            logger.error("CIF file not found at path: %s", cif_path)
             raise FileNotFoundError(f"CIF file not found at path: {cif_path}")
 
         try:

@@ -95,11 +95,23 @@ exclude = ["tests*", "*.tests*", "*.tests.*"]
 BornFree = ["py.typed"]
 
 [tool.ruff]
-select = ["E", "F", "I", "W", "D"]
-ignore = ["E731", "E501", "E402","D100","D105"]
+preview = true
+select = [
+    "F", "E", "W", # pyflakes and pycodestyle
+    "D",           # pydocstyle
+    "G", "LOG",    # logging rules
+    "RUF",         # ruff rules
+    "I",           # isort
+    "CPY",         # copyright header
+    "ERA",         # commented code
+    "FURB", "UP",  # modernize code
+    "SIM", "C90",  # simplify code
+    "PLW", "PLE",  # pylint rules
+]
+ignore = ["D1"]
 
 # Maximum line length
-line-length = 88
+line-length = 120
 target-version = "py311"
 
 # Exclude directories from linting

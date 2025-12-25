@@ -31,6 +31,8 @@ from BornFree.base_config import CrystalLatticeConfig
 from BornFree.network import network_block
 from BornFree.utils.units import gpa2habohr3
 
+logger = logging.getLogger(__name__)
+
 
 class BaseLocalEnergy:
     """Base class for all local energy calculators.
@@ -86,10 +88,10 @@ class BaseLocalEnergy:
         ne = sum(self.simulation_cell.nelec) * 3
 
         if is_deuterium:
-            logging.info("Using mass of D (deuterium).")
+            logger.info("Using mass of D (deuterium).")
             mass_factor = 2.0
         else:
-            logging.info("Using mass of H (hydrogen).")
+            logger.info("Using mass of H (hydrogen).")
             mass_factor = 1.0
 
         # Nuclear masses in atomic units
@@ -161,8 +163,13 @@ class BaseLocalEnergy:
         """
         grad_f_real = jax.grad(lambda p, y: f(p, y).real, argnums=1)
         grad_f_imag = jax.grad(lambda p, y: f(p, y).imag, argnums=1)
-        grad_f_real_closure = lambda y: grad_f_real(params, y)
-        grad_f_imag_closure = lambda y: grad_f_imag(params, y)
+
+        def grad_f_real_closure(y):
+            return grad_f_real(params, y)
+
+        def grad_f_imag_closure(y):
+            return grad_f_imag(params, y)
+
         return grad_f_real_closure, grad_f_imag_closure
 
     def _format_kinetic_result(self, real_part, imag_part, factor=0.5):
@@ -243,7 +250,7 @@ class LocalEnergy(BaseLocalEnergy):
             result = jax.lax.fori_loop(0, ne, _body_fun, [0.0, 0.0])
             return self._format_kinetic_result(result[0], result[1])
 
-        return lambda p, y: _lapl_over_f(p, y)
+        return _lapl_over_f
 
     def local_kinetic_energy_real_imag_hessian(self, f):
         """Computes kinetic energy using Hessian-based evaluation.
@@ -279,7 +286,7 @@ class LocalEnergy(BaseLocalEnergy):
 
             return self._format_kinetic_result(real_kinetic, imag_kinetic)
 
-        return lambda p, y: _lapl_over_f(p, y)
+        return _lapl_over_f
 
     def local_kinetic_energy_folx(self, f):
         """Computes kinetic energy using optimized forward differentiation.
@@ -297,12 +304,14 @@ class LocalEnergy(BaseLocalEnergy):
         """
 
         def _lapl_over_f(params, x):
-            func = lambda flat_x: f(params, flat_x)
+            def func(flat_x):
+                return f(params, flat_x)
+
             fwd_f = forward_laplacian(func)
             output = fwd_f(x)
             return [-0.5 * ((output.jacobian.dense_array**2).sum() + output.laplacian)]
 
-        return lambda p, y: _lapl_over_f(p, y)
+        return _lapl_over_f
 
     def local_kinetic_energy_partition(self, f):
         """Computes kinetic energy using a partitioned approach.
@@ -528,7 +537,7 @@ class BaseQuantumKineticEnergy(BaseLocalEnergy):
                     f"Unrecognized particle type: {particle}. Must be 'elec' or 'atom'."
                 )
 
-        return lambda p, y: _compute_cross_kinetic(p, y)
+        return _compute_cross_kinetic
 
     def local_kinetic_energy_real_imag_atom(self, f):
         """Compute atomic kinetic energy contributions for Born-Oppenheimer corrections.
@@ -574,7 +583,7 @@ class BaseQuantumKineticEnergy(BaseLocalEnergy):
             result = jax.lax.fori_loop(0, self.natom * 3, _body_fun, [0.0, 0.0])
             return self._format_kinetic_result(result[0], result[1])
 
-        return lambda p, y: _compute_atomic_laplacian(p, y)
+        return _compute_atomic_laplacian
 
     def local_kinetic_energy_real_imag(self, f):
         """Compute kinetic energy by evaluating real and imaginary parts separately.
@@ -624,7 +633,7 @@ class BaseQuantumKineticEnergy(BaseLocalEnergy):
             result = jax.lax.fori_loop(0, n_dims, _body_fun, [0.0, 0.0])
             return self._format_kinetic_result(result[0], result[1])
 
-        return lambda p, y: _compute_laplacian(p, y)
+        return _compute_laplacian
 
     def local_kinetic_energy_partition(self, f):
         """Compute kinetic energy using a partitioned approach.
@@ -791,13 +800,16 @@ class LocalEnergy_quantum(BaseQuantumKineticEnergy):
             eyes = jnp.eye(ne, dtype=x.dtype) / jnp.sqrt(
                 self.mass_array.reshape([-1, 1])
             )
-            func = lambda flat_x: f(params, flat_x)
+
+            def func(flat_x):
+                return f(params, flat_x)
+
             fwd_f = forward_laplacian(func)
             x_input = FwdLaplArray(x, FwdJacobian(eyes), jnp.zeros_like(x))
             output = fwd_f(x_input)
             return [-0.5 * ((output.jacobian.dense_array**2).sum() + output.laplacian)]
 
-        return lambda p, y: _compute_folx_laplacian(p, y)
+        return _compute_folx_laplacian
 
     def local_ewald_energy(self):
         """Generate function to compute Ewald energy for quantum NVT ensemble.
@@ -932,13 +944,16 @@ class LocalEnthalpy_quantum(BaseQuantumKineticEnergy):
             eye = jnp.kron(
                 jnp.eye(ne, dtype=x.dtype), self.get_inv_j(params["cell"]).T
             ) / jnp.sqrt(self.mass_array.reshape([-1, 1]))
-            func = lambda flat_x: f(params, flat_x)
+
+            def func(flat_x):
+                return f(params, flat_x)
+
             fwd_f = forward_laplacian(func, sparsity_threshold=6)
             x_input = FwdLaplArray(x, FwdJacobian(eye), jnp.zeros_like(x))
             output = fwd_f(x_input)
             return [-0.5 * ((output.jacobian.dense_array**2).sum() + output.laplacian)]
 
-        return lambda p, y: _compute_folx_laplacian(p, y)
+        return _compute_folx_laplacian
 
     def local_ewald_energy(self):
         """Generate function to compute Ewald energy with pressure-volume term for NPT.

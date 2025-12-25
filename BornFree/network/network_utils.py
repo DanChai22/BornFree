@@ -34,6 +34,8 @@ from BornFree.network import (
     network_nvt_quantum,
 )
 
+logger = logging.getLogger(__name__)
+
 
 def setup_network_functions(
     cfg: base_config.BornFreeConfig, system_dict: dict[str, Any]
@@ -49,9 +51,9 @@ def setup_network_functions(
 
     """
     if cfg.network.detnet.is_rezero:
-        logging.info("Using ReZero in atom network")
+        logger.info("Using ReZero in atom network")
     else:
-        logging.info("Not using ReZero in atom network")
+        logger.info("Not using ReZero in atom network")
 
     networks = {}
     batched_networks = {}

@@ -17,8 +17,8 @@
 
 # This file may have been modified by Shengdu Chai.
 # Modifications Copyright (c) 2025 Shengdu Chai
-
 import logging
+import operator
 from collections.abc import Callable
 
 import chex
@@ -30,6 +30,8 @@ from pyscf.pbc.gto import Cell as PyscfCell
 
 from BornFree import base_config, constants, hamiltonian
 from BornFree.base_config import CrystalLatticeConfig
+
+logger = logging.getLogger(__name__)
 
 
 @chex.dataclass
@@ -161,9 +163,10 @@ def create_frozen_mask(params_pytree, *keys_to_freeze):
                 lambda _: False, params_pytree[key]
             )
         else:
-            logging.warning(
-                f"Key '{key}' not found in params PyTree. "
-                f"Available keys: {list(params_pytree.keys())}"
+            logger.warning(
+                "Key '%s' not found in params PyTree. Available keys: %s",
+                key,
+                list(params_pytree.keys()),
             )
 
     return frozen_mask
@@ -292,7 +295,7 @@ def make_loss_nvt(
     """
     # Create appropriate local energy calculator based on nuclear treatment
     if nuclear_treatment == "quantum":
-        logging.info(f"is_deuterium: {is_deuterium}")
+        logger.info("is_deuterium: %s", is_deuterium)
         el_class = hamiltonian.LocalEnergy_quantum(
             simulation_cell=simulation_cell,
             mode=mode,
@@ -409,7 +412,7 @@ def make_loss_npt(
 
     """
     del nuclear_treatment
-    logging.info(f"is_deuterium: {is_deuterium}")
+    logger.info("is_deuterium: %s", is_deuterium)
     el_class = hamiltonian.LocalEnthalpy_quantum(
         simulation_cell=simulation_cell,
         target_pressure=target_pressure,
@@ -468,7 +471,7 @@ def make_loss_npt(
         # Freeze cell parameters to prevent unstable lattice updates
         frozen_mask = create_frozen_mask(params_tangent, "cell")
         masked_params_tangent = jax.tree_util.tree_map(
-            lambda grad, mask_val: grad * mask_val, params_tangent, frozen_mask
+            operator.mul, params_tangent, frozen_mask
         )
         masked_tangent = (masked_params_tangent, data_tangent)
 
@@ -507,7 +510,7 @@ def setup_evaluate_loss(
         ValueError: If the nuclear treatment is not supported.
 
     """
-    logging.info("Setting up loss evaluation...")
+    logger.info("Setting up loss evaluation...")
 
     # Check for supported nuclear treatments generally
     if cfg.nuclear_treatment not in ["fixed", "quantum"]:

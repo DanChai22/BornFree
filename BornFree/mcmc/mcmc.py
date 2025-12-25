@@ -14,6 +14,8 @@ from jax import Array
 from BornFree import constants, distance
 from BornFree.loss import AuxiliaryLossData
 
+logger = logging.getLogger(__name__)
+
 
 @chex.dataclass
 class AnnealingState:
@@ -654,22 +656,22 @@ class MCMCStepFactory:
         sampler = MCMCSampler(config)
 
         if step_type == "electron_only":
-            logging.info("Using electron only sampling")
+            logger.info("Using electron only sampling")
             return MCMCStepFactory._create_electron_only_step(
                 sampler, batch_mcmc_network, config
             )
         elif step_type == "joint":
-            logging.info("Using joint sampling")
+            logger.info("Using joint sampling")
             return MCMCStepFactory._create_joint_step(
                 sampler, batch_mcmc_network, config
             )
         elif step_type == "gibbs":
-            logging.info("Using Gibbs sampling")
+            logger.info("Using Gibbs sampling")
             return MCMCStepFactory._create_gibbs_step(
                 sampler, batch_mcmc_network, config
             )
         elif step_type == "annealing":
-            logging.info("Using annealing sampling")
+            logger.info("Using annealing sampling")
             return MCMCStepFactory._create_annealing_step(
                 sampler, batch_mcmc_network, config
             )
@@ -682,7 +684,7 @@ class MCMCStepFactory:
     ) -> Callable:
         """Create electron MCMC step function."""
         if config.importance_sampling is not None:
-            logging.info("Using importance sampling")
+            logger.info("Using importance sampling")
             func = jax.vmap(
                 jax.value_and_grad(config.importance_sampling, argnums=1),
                 in_axes=(None, 0),
@@ -690,7 +692,7 @@ class MCMCStepFactory:
             sampler_func = sampler.importance_sampling
         else:
             func = batch_mcmc_network
-            logging.info("Using Metropolis sampling")
+            logger.info("Using Metropolis sampling")
             sampler_func = sampler.metropolis_step
 
         @jax.jit
@@ -742,7 +744,7 @@ class MCMCStepFactory:
             )
         else:
             func = batch_mcmc_network
-            logging.info("Using Metropolis sampling")
+            logger.info("Using Metropolis sampling")
             sampler_func = sampler.metropolis_step_joint
 
         @jax.jit
@@ -780,7 +782,7 @@ class MCMCStepFactory:
             )
         else:
             func = batch_mcmc_network
-            logging.info("Using Metropolis sampling")
+            logger.info("Using Metropolis sampling")
             sampler_func = sampler.metropolis_step_gibbs
 
         @jax.jit

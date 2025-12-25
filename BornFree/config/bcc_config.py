@@ -12,6 +12,8 @@ from pyscf.pbc.gto import Cell as PyscfCell
 from BornFree import base_config, supercell
 from BornFree.config import utils
 
+logger = logging.getLogger(__name__)
+
 
 def _lattice_const(rs: float = 1.31, nh: int = 2) -> np.ndarray:
     volume = (4 / 3) * np.pi * (rs**3) * nh
@@ -61,7 +63,7 @@ def make_cell(
     ncopy: np.ndarray = np.array([2, 2, 2]),
     basis: str = "sto-3g",
     gen_k: bool = True,
-)->PyscfCell:
+) -> PyscfCell:
     """Create PySCF cell for BCC hydrogen structure.
 
     Args:
@@ -154,8 +156,10 @@ def get_config(input_str):
     cfg.ensemble = ensemble
     cfg.nuclear_treatment = nuclear_treatment
     cfg.batch_size = int(batch_size)
-    logging.info(
-        f"Ensemble: {cfg.ensemble}, Nuclear treatment: {cfg.nuclear_treatment}"
+    logger.info(
+        "Ensemble: %s, Nuclear treatment: %s",
+        cfg.ensemble,
+        cfg.nuclear_treatment,
     )
 
     # Set precision

@@ -46,6 +46,8 @@ from BornFree.utils import (
     writers,
 )
 
+logger = logging.getLogger(__name__)
+
 
 def process(cfg: base_config.BornFreeConfig):
     """Process NPT (constant pressure-temperature) quantum Monte Carlo simulation.
@@ -96,14 +98,14 @@ def process(cfg: base_config.BornFreeConfig):
         cell_annealing_width_ckpt = jnp.asarray(cfg.mcmc.annealing.cell_annealing_width)
         cfg.strategy.warmup_steps = 0
         if run_id_to_resume and cfg.optim.optimizer != "none":
-            logging.info(f"Found Wandb Run ID {run_id_to_resume} in checkpoint.")
+            logger.info("Found Wandb Run ID %s in checkpoint.", run_id_to_resume)
         else:
             run_id_to_resume = None
-            logging.warning(
+            logger.warning(
                 "No Wandb Run ID found in checkpoint. A new run will be created."
             )
     else:
-        logging.info("No checkpoint found. Training new model.")
+        logger.info("No checkpoint found. Training new model.")
         key, subkey = jax.random.split(key)
         # make sure data on each host is initialized differently
         subkey = jax.random.fold_in(subkey, jax.process_index())
@@ -128,7 +130,7 @@ def process(cfg: base_config.BornFreeConfig):
 
     sharded_key = kfac_jax.utils.make_different_rng_key_on_all_devices(key)
 
-    logging.info("create mcmc functions")
+    logger.info("create mcmc functions")
     mcmc_step = mcmc_utils.setup_mcmc_step(
         cfg, batched_networks, device_batch_size, unit_cell, precision
     )
@@ -177,7 +179,7 @@ def process(cfg: base_config.BornFreeConfig):
     )
 
     if t_init == 0:
-        logging.info("Burning in MCMC chain for %d steps", cfg.mcmc.burn_in)
+        logger.info("Burning in MCMC chain for %d steps", cfg.mcmc.burn_in)
 
         for _ in range(cfg.mcmc.burn_in):
             sharded_key, subkeys = kfac_jax.utils.p_split(sharded_key)
@@ -189,7 +191,7 @@ def process(cfg: base_config.BornFreeConfig):
                 mcmc_width=mcmc_width,
                 cell_annealing_width=cell_annealing_width,
             )
-        logging.info("Completed burn-in MCMC steps")
+        logger.info("Completed burn-in MCMC steps")
         sharded_key, subkeys = kfac_jax.utils.p_split(sharded_key)
 
     time_of_last_ckpt = time.time()
@@ -199,8 +201,8 @@ def process(cfg: base_config.BornFreeConfig):
         # run (most likely due to preemption) and so should continue from the last
         # iteration in the checkpoint. Otherwise, starting an inference run from a
         # training run.
-        logging.info("No optimizer provided. Assuming inference run.")
-        logging.info("Setting initial iteration to 0.")
+        logger.info("No optimizer provided. Assuming inference run.")
+        logger.info("Setting initial iteration to 0.")
         t_init = 0
 
     train_schema = [
@@ -229,7 +231,7 @@ def process(cfg: base_config.BornFreeConfig):
         iteration_key=None,
         log=False,
     ) as writer:
-        logging.info("start optimize")
+        logger.info("start optimize")
         for t in range(t_init, cfg.optim.iterations):
             (
                 phase,

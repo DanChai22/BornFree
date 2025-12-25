@@ -12,6 +12,8 @@ from pyscf.pbc.gto import Cell as PyscfCell
 from BornFree import base_config
 from BornFree.mcmc import mcmc
 
+logger = logging.getLogger(__name__)
+
 
 # Geometric Cooling Strategy (Geometric Cooling / Exponential Cooling)
 def geometric_cooling(initial_temp: float, k: int, beta: float) -> float:
@@ -97,7 +99,9 @@ def temperature_schedule(
         Temperature at step t according to the specified annealing strategy
 
     """
-    logging.info(f"Using {annealing_config.annealing_type} annealing strategy")
+    logger.info(
+        "Using %s annealing strategy", annealing_config.annealing_type
+    )
     if annealing_config.annealing_type == "geometric":
         return geometric_cooling(
             annealing_config.initial_temp, t, annealing_config.beta
@@ -209,7 +213,7 @@ def setup_annealing_mcmc_step(
         MCMC step function for annealing.
 
     """
-    logging.info(f"current_temp: {current_temp}")
+    logger.info("current_temp: %s", current_temp)
     latvec = jnp.asarray(unit_cell.lattice_vectors(), dtype=precision)
 
     def wrap_total_gibbs(params, data, key, mcmc_width):
@@ -217,8 +221,8 @@ def setup_annealing_mcmc_step(
         return total_gibbs(params, data)
 
     def calculate_gibbs_func(mcmc_step, total_gibbs):
-        logging.info(
-            f"Using local sampling with {cfg.mcmc.annealing.local_steps} steps"
+        logger.info(
+            "Using local sampling with %s steps", cfg.mcmc.annealing.local_steps
         )
 
         @jax.jit

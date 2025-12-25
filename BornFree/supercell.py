@@ -26,6 +26,8 @@
 # This file may have been modified by Shengdu Chai.
 # Modifications Copyright (c) 2025 Shengdu Chai
 
+from itertools import starmap
+
 import numpy as np
 from pyscf.pbc.gto import Cell as PyscfCell
 
@@ -45,7 +47,7 @@ def get_supercell_kpts(supercell):
     unit_box = np.stack([x.ravel() for x in np.meshgrid(*[u] * 3, indexing="ij")]).T
     unit_box_ = np.dot(unit_box, supercell.S.T)
     xyz_range = np.stack([f(unit_box_, axis=0) for f in (np.amin, np.amax)]).T
-    kptmesh = np.meshgrid(*[np.arange(*r) for r in xyz_range], indexing="ij")
+    kptmesh = np.meshgrid(*list(starmap(np.arange, xyz_range)), indexing="ij")
     possible_kpts = np.dot(np.stack([x.ravel() for x in kptmesh]).T, Sinv)
     in_unit_box = (possible_kpts >= 0) * (possible_kpts < 1 - 1e-12)
     select = np.where(np.all(in_unit_box, axis=1))[0]
@@ -68,7 +70,7 @@ def get_supercell_copies(latvec, S):
     unit_box = np.stack([x.ravel() for x in np.meshgrid(*[u] * 3, indexing="ij")]).T
     unit_box_ = np.dot(unit_box, S)
     xyz_range = np.stack([f(unit_box_, axis=0) for f in (np.amin, np.amax)]).T
-    mesh = np.meshgrid(*[np.arange(*r) for r in xyz_range], indexing="ij")
+    mesh = np.meshgrid(*list(starmap(np.arange, xyz_range)), indexing="ij")
     possible_pts = np.dot(np.stack([x.ravel() for x in mesh]).T, Sinv.T)
     in_unit_box = (possible_pts >= 0) * (possible_pts < 1 - 1e-12)
     select = np.where(np.all(in_unit_box, axis=1))[0]

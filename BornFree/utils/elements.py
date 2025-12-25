@@ -107,19 +107,7 @@ class Element:
 
 
 # Atomic symbols for all known elements
-# Generated using
-#   def _element(symbol, atomic_number):
-#     # period_start[n] = atomic number of group 1 element in (n+1)-th period.
-#     period_start = (1, 3, 11, 19, 37, 55, 87)
-#     for p, group1_no in enumerate(period_start):
-#       if atomic_number < group1_no:
-#         # In previous period but n is 0-based.
-#         period = p
-#         break
-#     else:
-#       period = p + 1
-#     return Element(symbol=symbol, atomic_number=atomic_number, period=period)
-#   [_element(s, n+1) for n, s in enumerate(symbols)]
+# Generated using a function that determines the period based on atomic number.
 # where symbols is the list of chemical symbols of all elements.
 _ELEMENTS = (
     Element(symbol="H", atomic_number=1, period=1),

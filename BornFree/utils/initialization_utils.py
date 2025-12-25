@@ -39,6 +39,8 @@ from pyscf.pbc.gto import Cell as PyscfCell
 from BornFree import base_config, hf, init_guess
 from BornFree.utils import system
 
+logger = logging.getLogger(__name__)
+
 
 def initialize_data(
     cfg: base_config.BornFreeConfig,
@@ -72,7 +74,7 @@ def initialize_data(
         ValueError: If the nuclear treatment is not supported.
 
     """
-    logging.info("Initializing particle positions...")
+    logger.info("Initializing particle positions...")
     if cfg.nuclear_treatment == "quantum":
         data_electron = init_guess.init_electrons(
             key=key,
@@ -125,7 +127,7 @@ def init_device(cfg: base_config.BornFreeConfig):
     """
     num_devices = jax.local_device_count()
     num_hosts = jax.device_count() // num_devices
-    logging.info(
+    logger.info(
         "Starting QMC with %i XLA devices per host across %i hosts.",
         num_devices,
         num_hosts,
@@ -172,7 +174,7 @@ def initialize_simulation(cfg: base_config.BornFreeConfig, precision: str) -> tu
         and the Hartree-Fock calculator.
 
     """
-    logging.info("Initializing simulation cell...")
+    logger.info("Initializing simulation cell...")
     simulation_cell = cfg.system.pyscf_cell
     simulation_cell = convert_cell_dtype(simulation_cell, precision)
     internal_cell = init_guess.pyscf_to_cell(cell=simulation_cell)
@@ -195,10 +197,10 @@ def get_precision(cfg: base_config.BornFreeConfig):
 
     """
     if cfg.precision == "float64":
-        logging.info("Using float64 precision")
+        logger.info("Using float64 precision")
         return jnp.float64
     elif cfg.precision == "float32":
-        logging.info("Using float32 precision")
+        logger.info("Using float32 precision")
         return jnp.float32
     else:
         raise ValueError(f"Not supported precision: {cfg.precision}")
@@ -214,7 +216,7 @@ def setup_random_seed(cfg: base_config.BornFreeConfig):
         JAX PRNGKey initialized with seed.
 
     """
-    logging.info("setup random seed")
+    logger.info("setup random seed")
     if cfg.debug.deterministic:
         seed = 666
     else:

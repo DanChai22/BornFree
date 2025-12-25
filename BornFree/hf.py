@@ -73,10 +73,11 @@ class SCF:
         self.kpts = (
             self.kpts + np.dot(np.linalg.inv(cell.a), np.mod(twist, 1.0)) * 2 * np.pi
         )
-        if hasattr(self.simulation_cell, "hf_type"):
-            hf_type = self.simulation_cell.hf_type
-        else:
-            hf_type = "rhf"
+        hf_type = (
+            self.simulation_cell.hf_type
+            if hasattr(self.simulation_cell, "hf_type")
+            else "rhf"
+        )
 
         if hf_type == "uhf":
             self.kmf = scf.KUHF(
@@ -184,7 +185,7 @@ class SCF:
             List of [up_matrix, down_matrix] with shape (batch, ne_spin, ne_spin).
 
         """
-        batch, nelec, ndim = coord.shape
+        batch, nelec, _ndim = coord.shape
         aos = self.eval_orbitals_pbc(coord)
         aos_shape = (self.ns_tol, batch, nelec, -1)
 
@@ -209,9 +210,9 @@ class SCF:
         """
         mos = self.eval_orb_mat(coord)
         slogdets = [np.linalg.slogdet(mo) for mo in mos]
-        phase, slogdet = list(
+        phase, slogdet = next(
             map(lambda x, y: [x[0] * y[0], x[1] + y[1]], *zip(slogdets))
-        )[0]
+        )
 
         return phase, slogdet
 
@@ -242,7 +243,7 @@ class SCF:
             List of orbitals with periodic phase correction applied
         """
         orbitals = self.eval_orb_mat(coord)
-        ## minus symbol makes mos to be periodical
+        # minus symbol makes mos to be periodical
         phases = self.eval_phase(-coord)
         return [orbital * phase for orbital, phase in zip(orbitals, phases)]
 

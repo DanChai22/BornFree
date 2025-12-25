@@ -34,6 +34,8 @@ import kfac_jax
 from BornFree import base_config, constants
 from BornFree.mcmc import annealing_utils
 
+logger = logging.getLogger(__name__)
+
 
 def create_training_step(mcmc_step, optimizer_step, reset_if_nan=False):
     """Create a training step function based on the MCMC type and optimizer.
@@ -343,10 +345,7 @@ def determine_training_phase_and_step(
             steps_after_warmup = t - cfg.strategy.warmup_steps
             cycle_length = cfg.strategy.opt_steps + cfg.strategy.geo_opt_steps
             step_in_cycle = steps_after_warmup % cycle_length
-            if step_in_cycle < cfg.strategy.geo_opt_steps:
-                phase = "Geo Opt"
-            else:
-                phase = "Standard Opt"
+            phase = "Geo Opt" if step_in_cycle < cfg.strategy.geo_opt_steps else "Standard Opt"
 
         if phase != last_phase:
             if phase == "Warmup":
@@ -377,7 +376,7 @@ def determine_training_phase_and_step(
                         mcmc_width=mcmc_width,
                         cell_annealing_width=cell_annealing_width,
                     )
-                logging.info("Completed burn-in MCMC steps before standard opt")
+                logger.info("Completed burn-in MCMC steps before standard opt")
             last_phase = phase
 
     return phase, optimizer_step_fn, last_phase, data, params, sharded_key, current_temp

@@ -74,7 +74,7 @@ class Writer(contextlib.AbstractContextManager):
     def __enter__(self):
         should_add_header = not os.path.exists(self._filename)
 
-        self._file = open(self._filename, "a+")
+        self._file = open(self._filename, "a+", encoding="utf-8")
 
         if should_add_header:
             # write top row of csv
@@ -211,9 +211,9 @@ def _get_wandb_annealing_components(config: base_config.BornFreeConfig) -> list[
     # Replace abbreviated names with full names
     components = []
     for component in base_components:
-        component = component.replace("l_sampling", "local_sampling")
-        component = component.replace("l_steps", "local_steps")
-        components.append(component)
+        modified_component = component.replace("l_sampling", "local_sampling")
+        modified_component = modified_component.replace("l_steps", "local_steps")
+        components.append(modified_component)
 
     # Add final_temp
     components.append(f"final_temp{config.mcmc.annealing.final_temp}")
@@ -352,7 +352,7 @@ def load_yaml_to_config(base_folder: str, keys: list) -> ml_collections.ConfigDi
     if not os.path.exists(yaml_path):
         raise FileNotFoundError(f"Config file not found at {yaml_path}")
 
-    with open(yaml_path) as f:
+    with open(yaml_path, encoding="utf-8") as f:
         yaml_config = yaml.unsafe_load(f)
 
     # Convert yaml_config to dict if it's a BornFreeConfig object
@@ -390,7 +390,7 @@ def save_config_to_yaml(config: base_config.BornFreeConfig, save_path: str) -> N
     os.makedirs(os.path.dirname(os.path.abspath(save_path)), exist_ok=True)
 
     # Save to yaml
-    with open(save_path, "w") as f:
+    with open(save_path, "w", encoding="utf-8") as f:
         yaml.dump(convert_data_for_yaml(config_dict), f, default_flow_style=False)
 
 

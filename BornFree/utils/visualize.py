@@ -2,6 +2,7 @@
 #
 # Licensed under the Apache License, Version 2.0.
 
+import operator
 import os
 from typing import Any, NamedTuple
 
@@ -400,7 +401,7 @@ def identify_molecule(
             if d < threshold_max and d > threshold_min:
                 candidate_bonds.append((i, j, d))
 
-    candidate_bonds.sort(key=lambda bond: bond[2])
+    candidate_bonds.sort(key=operator.itemgetter(2))
 
     paired = set()
     molecules = []
@@ -673,7 +674,7 @@ def _plot_phi_distribution(
         matplotlib.pyplot.Figure: The figure object
 
     """
-    fig, ax = plt.subplots(figsize=(10, 6))
+    _fig, ax = plt.subplots(figsize=(10, 6))
     ax.plot(phi_centers, phi_dist, "b-", linewidth=2)
     ax.set_xlabel(r"$\phi$ (rad)", fontsize=14)
     ax.set_ylabel(r"$P(\phi)$", fontsize=14)
@@ -712,7 +713,7 @@ def _plot_cos_theta_distribution(
         matplotlib.pyplot.Figure: The figure object
 
     """
-    fig, ax = plt.subplots(figsize=(10, 6))
+    _fig, ax = plt.subplots(figsize=(10, 6))
     ax.plot(cos_theta_centers, cos_theta_dist, "r-", linewidth=2)
     ax.set_xlabel(r"$\cos(\theta)$", fontsize=14)
     ax.set_ylabel(r"$P(\cos(\theta))$", fontsize=14)

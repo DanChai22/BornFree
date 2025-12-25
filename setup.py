@@ -3,6 +3,9 @@
 #
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
+#
+# This file may have been modified by Shengdu Chai.
+# Modifications Copyright (c) 2025 Shengdu Chai
 
 from setuptools import find_packages, setup
 
@@ -53,7 +56,9 @@ EXTRAS_REQUIRE = {
 setup(
     name="BornFree",
     version="1.0.0",
-    description="Beyond Born-Oppenheimer Real-space Neural-network Framework for Enthalpy Extremization: A first-principles quantum Monte Carlo study of high-pressure solid hydrogen",
+    description="Beyond Born-Oppenheimer Real-space Neural-network Framework for \
+    Enthalpy Extremization: A first-principles quantum Monte Carlo study of \
+    high-pressure solid hydrogen",
     author="Shengdu Chai",
     author_email="sdchai24@m.fudan.edu.cn",
     install_requires=REQUIRED_PACKAGES,

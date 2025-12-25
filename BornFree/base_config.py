@@ -376,7 +376,7 @@ def default() -> ml_collections.ConfigDict:
         {
             "config_module": __name__,
             "ensemble": "NVT",  # NVT or NPT
-            "nuclear_treatment": "fixed",  #'quantum','fixed'
+            "nuclear_treatment": "fixed",  # 'quantum','fixed'
             "precision": "float32",  # float32 or float64
             "target_pressure": 100.0,  # target pressure in GPa
             "batch_size": 1024,  # batch size
@@ -441,7 +441,8 @@ def default() -> ml_collections.ConfigDict:
                 "laplacian_mode": "folx",  # 'folx', 'for', 'partition', 'hessian'
                 "partition_number": 3,
                 # Only used for 'partition' mode.
-                # partition_number must be divisivle by (dim * number of electrons). The smaller the faster, but requires more memory.
+                # partition_number must be divisivle by (dim * number of electrons).
+                # The smaller the faster, but requires more memory.
             },
             "log": {
                 "stats_frequency": 10,  # iterations between logging of stats
@@ -482,7 +483,7 @@ def default() -> ml_collections.ConfigDict:
                 "adapt_frequency": 100,  # Number of steps after which to update the adaptive MCMC step size
                 # If true, scale the proposal width for each electron by the harmonic
                 # mean of the distance to the nuclei.
-                "importance_sampling": False, #not tested
+                "importance_sampling": False,  # not tested
                 # whether to use importance sampling in MCMC step, untested yet
                 # Metropolis sampling will be used if false
                 "one_electron": False,
@@ -499,13 +500,14 @@ def default() -> ml_collections.ConfigDict:
                     "full_det": False,
                     "hidden_dims": ((64, 32, 32), (64, 32, 32), (64, 32, 32)),
                     "determinants": 8,
-                    "distance_type": "tri",  #'nu' or 'tri'
+                    "distance_type": "tri",  # 'nu' or 'tri'
                 },
                 "twist": (
                     0.25,
-                    0.25,
-                    0.25,
-                ),  # Difine the twist of wavefunction, twists are given in terms of fractions of supercell reciprocal vectors
+                     0.25,
+                     0.25,
+                 ),  # Define the twist of wavefunction, twists are given in terms
+                # of fractions of supercell reciprocal vectors
             },
             "debug": {
                 "deterministic": False,  # Use a deterministic seed.
@@ -522,7 +524,9 @@ def default() -> ml_collections.ConfigDict:
                     "weights": 1.0,
                 },
                 "lattice": {
-                    "mode": "angle",  # 'angle' or 'partial_angle' or 'diag', 'partial_angle' means we do not optimize angle
+                    # 'angle' or 'partial_angle' or 'diag', 'partial_angle' means
+                    # we do not optimize angle
+                    "mode": "angle",
                     "a": 1.0,
                     "b": 1.0,
                     "c": 1.0,

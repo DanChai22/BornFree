@@ -38,6 +38,8 @@ from BornFree import distance
 from BornFree.base_config import CrystalLatticeConfig
 from BornFree.network import network_block
 
+logger = logging.getLogger(__name__)
+
 
 def get_lattice_displacements(latvec: Array) -> Array:
     """Generates lattice displacement vectors for real-space Ewald summation.
@@ -180,7 +182,7 @@ def calculate_reciprocal(
     sum_e_sin = jnp.sin(e_GdotR).sum(axis=0)
     sum_e_cos = jnp.cos(e_GdotR).sum(axis=0)
     ee_recip = jnp.dot(sum_e_sin**2 + sum_e_cos**2, gweight)
-    ## Reciprocal space electron-ion part
+    # Reciprocal space electron-ion part
     GdotR = jnp.dot(gpoints, jnp.asarray(atom_pos.reshape(natom, -1).T))
     ion_exp = jnp.dot(jnp.exp(1j * GdotR), atom_charges)
     coscos_sinsin = -ion_exp.real * sum_e_cos - ion_exp.imag * sum_e_sin
@@ -326,7 +328,7 @@ class EwaldSum_nvt_fixed:
         # Determine alpha
         smallestheight = jnp.amin(1 / jnp.linalg.norm(recvec, axis=1))
         self.alpha = 5.0 / smallestheight
-        logging.info(f"Setting Ewald alpha to {self.alpha.item()}")
+        logger.info("Setting Ewald alpha to %s", self.alpha.item())
 
         # Determine G points to include in reciprocal Ewald sum
         gptsXpos = jnp.meshgrid(

@@ -135,7 +135,7 @@ def solid_fermi_net_orbitals(
         for h, p in zip(h_to_orbitals, params["orbital"])
     ]
 
-    for i, spin in enumerate(active_spin_channels):
+    for i in range(len(active_spin_channels)):
         nparams = params["orbital"][i]["w"].shape[-1] // 2
         orbitals[i] = (
             orbitals[i][..., :nparams] + 1j * orbitals[i][..., nparams:]
@@ -197,7 +197,7 @@ def eval_func(
         Required wavefunction value.
 
     """
-    orbitals, to_env = solid_fermi_net_orbitals(
+    orbitals, _to_env = solid_fermi_net_orbitals(
         params,
         x,
         klist=klist,

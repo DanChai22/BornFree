@@ -19,7 +19,6 @@
 # Modifications Copyright (c) 2025 Shengdu Chai
 """Curvature blocks for FermiNet."""
 
-# import functools
 from collections.abc import Mapping, Sequence
 from typing import Any
 
@@ -135,7 +134,7 @@ class QmcBlockedDense(kfac_jax.TwoKroneckerFactored):
         # The forward computation is
         # einsum(x,w): bijk,bkmjn -> bijmn
         inputs_cov = jnp.einsum("bijk,bijl->jkl", x, x) / normalizer
-        dy = jnp.reshape(dy, dy.shape[:-2] + (-1,))
+        dy = jnp.reshape(dy, (*dy.shape[:-2], -1))
         outputs_cov = jnp.einsum("bijk,bijl->jkl", dy, dy) / normalizer
 
         state.inputs_factor.update(inputs_cov, ema_old, ema_new)
@@ -219,7 +218,6 @@ class QmcBlockedDense(kfac_jax.TwoKroneckerFactored):
         v = w
         k, m, j, n = v.shape
         if power == 1:
-            # jk(mn)
             v = jnp.transpose(v, [2, 0, 1, 3]).reshape([j, k, m * n])
             v = vmap_matmul(state.inputs_factor.value, v)
             v = vmap_matmul(v, state.outputs_factor.value)
@@ -237,7 +235,6 @@ class QmcBlockedDense(kfac_jax.TwoKroneckerFactored):
                     "QmcBlockedDense."
                 )
             else:
-                # jk(mn)
                 v = jnp.transpose(v, [2, 0, 1, 3]).reshape([j, k, m * n])
                 v = vmap_matmul(state.cache[str(power)]["inputs_factor"], v)
                 v = vmap_matmul(v, state.cache[str(power)]["outputs_factor"])
@@ -320,7 +317,8 @@ GRAPH_PATTERNS = (
     repeated_dense2_with_bias_pattern,
     repeated_dense1_no_bias_pattern,
     repeated_dense2_no_bias_pattern,
-) + kfac_jax.tag_graph_matcher.DEFAULT_GRAPH_PATTERNS
+    *kfac_jax.tag_graph_matcher.DEFAULT_GRAPH_PATTERNS,
+)
 
 
 kfac_jax.set_default_tag_to_block_ctor("repeated_dense_tag", RepeatedDenseBlock)

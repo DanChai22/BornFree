@@ -50,8 +50,9 @@ def init_solid_fermi_net_params(
 ) -> dict:
     """Initializes parameters for the NPT ensemble.
 
-    This function creates and initializes all parameters needed for the NPT ensemble, including weights and biases for the neural network
-    layers, envelope functions, cell parameters.
+    This function creates and initializes all parameters needed for the NPT ensemble,
+    including weights and biases for the neural network layers, envelope functions,
+    cell parameters.
 
     Args:
         key: JAX RNG state.
@@ -211,9 +212,6 @@ def solid_fermi_net_electron_orbitals(
         to_env: Input variables for the envelope function.
 
     """
-    # ae_: shape (nelec, natom, 3); r_ae: shape (nelec, natom, 1)
-    # ee_: shape (nelec, nelec, 3); r_ee: shape (nelec, nelec, 1)
-    # aa_: shape (natom, natom, 3); r_aa: shape (natom, natom, 1)
     if atom_center_dynamic:
         ae_, ee_, _, r_ae, r_ee, _ = (
             network_block.construct_periodic_input_features_npt_quantum(
@@ -252,7 +250,7 @@ def solid_fermi_net_electron_orbitals(
         for h, p in zip(h_to_orbitals, params["orbital"])
     ]
 
-    for i, _ in enumerate(active_spin_channels):
+    for i in range(len(active_spin_channels)):
         nparams = params["orbital"][i]["w"].shape[-1] // 2
         orbitals[i] = orbitals[i][..., :nparams] + 1j * orbitals[i][..., nparams:]
     if envelope_type in ["isotropic", "diagonal", "full"]:

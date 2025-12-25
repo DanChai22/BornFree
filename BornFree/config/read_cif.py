@@ -12,6 +12,8 @@ from pyscf.pbc.gto import Cell as PyscfCell
 from BornFree import base_config, supercell
 from BornFree.config import utils
 
+logger = logging.getLogger(__name__)
+
 
 def eval_rs(ase_cell, nh):
     """Calculate Wigner-Seitz radius from cell volume and number of atoms.
@@ -107,7 +109,7 @@ def make_cell(
     basis: str = "sto-3g",
     gen_k: bool = True,
     identity: bool = False,
-)->PyscfCell:
+) -> PyscfCell:
     """Create a PySCF cell object from an ASE cell with specified parameters.
 
     Args:
@@ -247,7 +249,7 @@ def get_config(input_str):
     # Configure simulation parameters
     cfg.infer = bool(int(infer))
     cfg.ensemble = ensemble
-    logging.info(f"ensemble is {cfg.ensemble}")
+    logger.info("ensemble is %s", cfg.ensemble)
     cfg.target_pressure = float(pressure)
     cfg.xrd_exp = [1.46, 1.54, 1.66] if np.isclose(cfg.target_pressure, 95.0) else None
     cfg.use_x64 = False

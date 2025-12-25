@@ -35,6 +35,8 @@ import optax
 
 from BornFree import base_config, constants, curvature_tags_and_blocks
 
+logger = logging.getLogger(__name__)
+
 
 def null_update(params, data, opt_state):
     """Performs an identity operation with an OptUpdate interface.
@@ -134,7 +136,7 @@ def init_opt_state_and_step(
 
     """
     optimizer_name = cfg.optim.optimizer
-    logging.info(f"Initializing optimizer and opt state for {optimizer_name}")
+    logger.info("Initializing optimizer and opt state for %s", optimizer_name)
 
     if optimizer_name == "none":
         optimizer = None
@@ -168,7 +170,6 @@ def init_opt_state_and_step(
             auto_register_kwargs=dict(
                 graph_patterns=curvature_tags_and_blocks.GRAPH_PATTERNS,
             ),
-            # debug=True
         )
         sharded_key, subkeys = kfac_jax.utils.p_split(sharded_key)
         opt_state = optimizer.init(params, subkeys, data)

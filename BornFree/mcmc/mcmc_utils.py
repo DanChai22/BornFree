@@ -14,6 +14,8 @@ from pyscf.pbc.gto import Cell as PyscfCell
 from BornFree import base_config
 from BornFree.mcmc import mcmc
 
+logger = logging.getLogger(__name__)
+
 
 def setup_mcmc_step(
     cfg: base_config.BornFreeConfig,
@@ -35,7 +37,7 @@ def setup_mcmc_step(
         MCMC step function
 
     """
-    logging.info("Setting up MCMC step...")
+    logger.info("Setting up MCMC step...")
     latvec = jnp.asarray(simulation_cell.lattice_vectors(), dtype=precision)
 
     sampling_func = None

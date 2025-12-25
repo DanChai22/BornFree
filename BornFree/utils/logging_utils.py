@@ -34,6 +34,8 @@ from BornFree import base_config, hamiltonian
 from BornFree.network import network_block
 from BornFree.utils import units, writers
 
+logger = logging.getLogger(__name__)
+
 
 def extract_and_scale_metrics(loss, aux_data, scale):
     """Extract and scale training metrics from loss and auxiliary data.
@@ -230,31 +232,37 @@ def log_training_step(
     if phase:
         log_msg_parts.append(f"[{phase}]")
 
-    log_msg_parts.append(f"Step {t:05d}: {loss:03.4f} E_h")
-    log_msg_parts.append(f"variance={variance:03.4f} E_h^2")
+    log_msg_parts.extend([
+        f"Step {t:05d}: {loss:03.4f} E_h",
+        f"variance={variance:03.4f} E_h^2",
+    ])
 
     if cfg.mcmc.mcmc_type == "gibbs":
         log_metrics[format_key("atom_pmove")] = pmove[0]
         log_metrics[format_key("elec_pmove")] = pmove[1]
-        log_msg_parts.append(f"atom_pmove={pmove[0]:0.2f}")
-        log_msg_parts.append(f"elec_pmove={pmove[1]:0.2f}")
+        log_msg_parts.extend([
+            f"atom_pmove={pmove[0]:0.2f}",
+            f"elec_pmove={pmove[1]:0.2f}",
+        ])
     elif cfg.mcmc.mcmc_type in ["joint", "electron_only"] and cfg.ensemble == "NVT":
         log_metrics[format_key("pmove")] = pmove[0]
         log_msg_parts.append(f"pmove={pmove[0]:0.2f}")
     else:
         raise ValueError(f"Not supported mcmc type: {cfg.mcmc.mcmc_type}")
 
-    log_msg_parts.append(f"imaginary part={imaginary:03.4f}")
-    log_msg_parts.append(f"kinetic={kinetic.real:03.4f} E_h")
-    log_msg_parts.append(f"ewald={ewald:03.4f} E_h")
-    log_msg_parts.append(f"ee={ee:03.4f} E_h")
-    log_msg_parts.append(f"ei={ei:03.4f} E_h")
-    log_msg_parts.append(f"ii={ii:03.4f} E_h")
+    log_msg_parts.extend([
+        f"imaginary part={imaginary:03.4f}",
+        f"kinetic={kinetic.real:03.4f} E_h",
+        f"ewald={ewald:03.4f} E_h",
+        f"ee={ee:03.4f} E_h",
+        f"ei={ei:03.4f} E_h",
+        f"ii={ii:03.4f} E_h",
+    ])
 
     if cfg.ensemble == "NPT":
         log_msg_parts.append(f"pv={pv:03.4f} E_h")
 
-    logging.info(", ".join(log_msg_parts))
+    logger.info(", ".join(log_msg_parts))
 
     wandb.log(log_metrics, step=t)
 
@@ -359,10 +367,13 @@ def log_bo_energy(
         kin_atom_cross = kin_atom_cross[0]
 
         if jax.process_index() == 0:
-            logging.info(
-                f"BO energy: first line {kin_atom_total}, "
-                f"second line, first term {kin_atom_atom}, "
-                f"second term {kin_atom_elec}, third term {kin_atom_cross}"
+            logger.info(
+                "BO energy: first line %s, second line, first term %s, "
+                "second term %s, third term %s",
+                kin_atom_total,
+                kin_atom_atom,
+                kin_atom_elec,
+                kin_atom_cross,
             )
             metrics_BO = {
                 "first line real": np.asarray(kin_atom_total.real),

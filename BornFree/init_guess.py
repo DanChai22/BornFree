@@ -74,8 +74,9 @@ def init_electrons(
             )
             for atom in cell
         ]
-        # element.nalpha return the up spin number of the single element, if ecp is used, [nalpha,nbeta] should be reduce
-        # with the the core charge which equals atomic_number - atom.charge
+        # element.nalpha return the up spin number of the single element, if ecp is
+        # used, [nalpha,nbeta] should be reduce with the the core charge which equals
+        # atomic_number - atom.charge
         assert sum(sum(x) for x in atomic_spin_configs) == sum(electrons)
         while tuple(sum(x) for x in zip(*atomic_spin_configs)) != electrons:
             i = np.random.randint(len(atomic_spin_configs))

@@ -162,11 +162,12 @@ class get_xrd:
             structure = AseAtomsAdaptor.get_structure(atoms.repeat((1, 1, 1)))
             # Compute XRD pattern
             xrd_pattern = self.xrd_calculator.get_pattern(
-                structure, two_theta_range=self.two_theta_range
-            )
-            intensity_func = lambda x, y: y * self.lorentz(
-                two_theta_values, x, self.gamma
-            )
+                  structure, two_theta_range=self.two_theta_range
+              )
+
+            def intensity_func(x, y):
+                return y * self.lorentz(two_theta_values, x, self.gamma)
+
             vmap_intensity_func = jax.vmap(intensity_func, in_axes=(0, 0), out_axes=0)
             intensities = jnp.sum(
                 vmap_intensity_func(xrd_pattern.x, xrd_pattern.y), axis=0
