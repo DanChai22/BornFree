@@ -32,9 +32,7 @@ _gldict = {"laplacian": np.s_[:1], "gradient_laplacian": np.s_[0:4]}
 
 
 def _aostack_mol(ao, gl):
-    return np.concatenate(
-        [ao[_gldict[gl]], ao[[4, 7, 9]].sum(axis=0, keepdims=True)], axis=0
-    )
+    return np.concatenate([ao[_gldict[gl]], ao[[4, 7, 9]].sum(axis=0, keepdims=True)], axis=0)
 
 
 def _aostack_pbc(ao, gl):
@@ -70,28 +68,18 @@ class SCF:
         self.primitive_cell = cell.original_cell
         self.sim_nelec = self.simulation_cell.nelec
         self.kpts = supercell.get_supercell_kpts(self.simulation_cell)
-        self.kpts = (
-            self.kpts + np.dot(np.linalg.inv(cell.a), np.mod(twist, 1.0)) * 2 * np.pi
-        )
-        hf_type = (
-            self.simulation_cell.hf_type
-            if hasattr(self.simulation_cell, "hf_type")
-            else "rhf"
-        )
+        self.kpts = self.kpts + np.dot(np.linalg.inv(cell.a), np.mod(twist, 1.0)) * 2 * np.pi
+        hf_type = self.simulation_cell.hf_type if hasattr(self.simulation_cell, "hf_type") else "rhf"
 
         if hf_type == "uhf":
-            self.kmf = scf.KUHF(
-                self.primitive_cell, exxdiv="ewald", kpts=self.kpts
-            ).density_fit()
+            self.kmf = scf.KUHF(self.primitive_cell, exxdiv="ewald", kpts=self.kpts).density_fit()
 
             # break initial guess symmetry for UHF
             dm_up, dm_down = self.kmf.get_init_guess()
             dm_down[:, :2, :2] = 0
             dm = (dm_up, dm_down)
         elif hf_type == "rhf":
-            self.kmf = scf.KHF(
-                self.primitive_cell, exxdiv="ewald", kpts=self.kpts
-            ).density_fit()
+            self.kmf = scf.KHF(self.primitive_cell, exxdiv="ewald", kpts=self.kpts).density_fit()
             dm = self.kmf.get_init_guess()
         else:
             raise ValueError("Unrecognized Hartree Fock type.")
@@ -106,32 +94,21 @@ class SCF:
             for k in range(self.kmf.kpts.shape[0]):
                 # restrict or not
                 if len(self.kmf.mo_coeff[0][0].shape) == 2:
-                    mca = self.kmf.mo_coeff[s][k][
-                        :, np.asarray(self.kmf.mo_occ[s][k] > 0.9)
-                    ]
+                    mca = self.kmf.mo_coeff[s][k][:, np.asarray(self.kmf.mo_occ[s][k] > 0.9)]
                 else:
                     minocc = (0.9, 1.1)[s]
-                    mca = self.kmf.mo_coeff[k][
-                        :, np.asarray(self.kmf.mo_occ[k] > minocc)
-                    ]
+                    mca = self.kmf.mo_coeff[k][:, np.asarray(self.kmf.mo_occ[k] > minocc)]
                 mclist.append(mca)
             self.param_split[key] = np.cumsum([m.shape[1] for m in mclist])
             self.parameters[key] = np.concatenate(mclist, axis=-1)
             self.k_split[key] = np.array([m.shape[1] for m in mclist])
             self.klist.append(
-                np.concatenate(
-                    [
-                        np.tile(kpt[None, :], (split, 1))
-                        for kpt, split in zip(
-                            self.kmf.kpts, self.k_split[self.coeff_key[s]]
-                        )
-                    ]
-                )
+                np.concatenate([
+                    np.tile(kpt[None, :], (split, 1))
+                    for kpt, split in zip(self.kmf.kpts, self.k_split[self.coeff_key[s]])
+                ])
             )
-            self.klist = [
-                np.asarray(self.klist[s], dtype=self.simulation_cell.a.dtype)
-                for s in range(len(self.klist))
-            ]
+            self.klist = [np.asarray(self.klist[s], dtype=self.simulation_cell.a.dtype) for s in range(len(self.klist))]
 
     def eval_orbitals_pbc(self, coord, eval_str="GTOval_sph"):
         """Evaluates atomic orbitals with periodic boundary conditions.
@@ -144,14 +121,10 @@ class SCF:
             List of AO arrays for each k-point with Bloch phase factors.
 
         """
-        prim_coord, wrap = distance.np_enforce_pbc(
-            self.primitive_cell.a, coord.reshape([coord.shape[0], -1])
-        )
+        prim_coord, wrap = distance.np_enforce_pbc(self.primitive_cell.a, coord.reshape([coord.shape[0], -1]))
         prim_coord = prim_coord.reshape([-1, 3])
         wrap = wrap.reshape([-1, 3])
-        ao = self.primitive_cell.eval_gto(
-            "PBC" + eval_str, prim_coord, kpts=self.kmf.kpts
-        )
+        ao = self.primitive_cell.eval_gto("PBC" + eval_str, prim_coord, kpts=self.kmf.kpts)
 
         kdotR = np.einsum("ij,kj,nk->in", self.kmf.kpts, self.primitive_cell.a, wrap)
         wrap_phase = np.exp(1j * kdotR)
@@ -210,9 +183,7 @@ class SCF:
         """
         mos = self.eval_orb_mat(coord)
         slogdets = [np.linalg.slogdet(mo) for mo in mos]
-        phase, slogdet = next(
-            map(lambda x, y: [x[0] * y[0], x[1] + y[1]], *zip(slogdets))
-        )
+        phase, slogdet = next(map(lambda x, y: [x[0] * y[0], x[1] + y[1]], *zip(slogdets)))
 
         return phase, slogdet
 
@@ -227,9 +198,7 @@ class SCF:
 
         """
         coords = np.split(coord, (self.sim_nelec[0], sum(self.sim_nelec)), axis=1)
-        kdots = [
-            np.einsum("ijl, kl->ijk", cor, kpt) for cor, kpt in zip(coords, self.klist)
-        ]
+        kdots = [np.einsum("ijl, kl->ijk", cor, kpt) for cor, kpt in zip(coords, self.klist)]
         phase = [np.exp(1j * kdot) for kdot in kdots]
         return phase
 

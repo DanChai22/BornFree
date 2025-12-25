@@ -108,9 +108,7 @@ def scaled_g(w: Array) -> Array:
         The value of the scaling function g.
 
     """
-    return w * (
-        1 - 3.0 / 2.0 * jnp.abs(w / jnp.pi) + 1.0 / 2.0 * jnp.abs(w / jnp.pi) ** 2
-    )
+    return w * (1 - 3.0 / 2.0 * jnp.abs(w / jnp.pi) + 1.0 / 2.0 * jnp.abs(w / jnp.pi) ** 2)
 
 
 def nu_distance(xea: Array, a: Array, b: Array) -> tuple[Array, Array]:
@@ -136,9 +134,7 @@ def nu_distance(xea: Array, a: Array, b: Array) -> tuple[Array, Array]:
     sg = scaled_g(w)
     rel = jnp.matmul(sg, a)
     r2 = jnp.matmul(a, jnp.transpose(a)) * (sg[..., :, None] * sg[..., None, :])
-    result = jnp.sum(r1, axis=-1) + jnp.sum(
-        r2 * (jnp.ones(r2.shape[-2:]) - jnp.eye(r2.shape[-1])), axis=[-1, -2]
-    )
+    result = jnp.sum(r1, axis=-1) + jnp.sum(r2 * (jnp.ones(r2.shape[-2:]) - jnp.eye(r2.shape[-1])), axis=[-1, -2])
     sd = result**0.5
     return sd, rel
 
@@ -194,9 +190,7 @@ def get_distance_function(distance_type: str) -> Callable:
         raise ValueError(f"Unrecognized distance type: {distance_type}")
 
 
-def construct_symmetric_features(
-    h_one: Array, h_two: Array, spins: tuple[int, int]
-) -> Array:
+def construct_symmetric_features(h_one: Array, h_two: Array, spins: tuple[int, int]) -> Array:
     """Combines intermediate features from rank-one and rank-two streams.
 
     Args:
@@ -215,27 +209,19 @@ def construct_symmetric_features(
 
     """
     # Split features into spin up and spin down electrons
-    h_ones = jnp.split(
-        h_one, spins[0:1], axis=0
-    )  # List[array(spinup electrons, n1), array(spindown electrons, n1)]
+    h_ones = jnp.split(h_one, spins[0:1], axis=0)  # List[array(spinup electrons, n1), array(spindown electrons, n1)]
     h_twos = jnp.split(
         h_two, spins[0:1], axis=0
     )  # List[array(spinup electrons, nelectrons, n2), array(spindown electrons, nelectrons, n2)]
 
     # Construct inputs to next layer
     # h.size == 0 corresponds to unoccupied spin channels.
-    g_one = [
-        jnp.mean(h, axis=0, keepdims=True) for h in h_ones if h.size > 0
-    ]  # shape (1, n1)
-    g_two = [
-        jnp.mean(h, axis=0) for h in h_twos if h.size > 0
-    ]  # shape (nelectrons, n2)
+    g_one = [jnp.mean(h, axis=0, keepdims=True) for h in h_ones if h.size > 0]  # shape (1, n1)
+    g_two = [jnp.mean(h, axis=0) for h in h_twos if h.size > 0]  # shape (nelectrons, n2)
 
     g_one = [jnp.tile(g, [h_one.shape[0], 1]) for g in g_one]  # shape (nelectrons, n1)
 
-    return jnp.concatenate(
-        [h_one, *g_one, *g_two], axis=1
-    )  # shape (nelectrons, 2*n1 + n2)
+    return jnp.concatenate([h_one, *g_one, *g_two], axis=1)  # shape (nelectrons, 2*n1 + n2)
 
 
 def _compute_periodic_features_core(
@@ -329,9 +315,7 @@ def construct_periodic_input_features(
     sim_elec, _ = enforce_pbc(simulation_cell.a, elec_coord)
     sim_atom, _ = enforce_pbc(simulation_cell.a, atom_coord)
 
-    return _compute_periodic_features_core(
-        sim_elec, sim_atom, sim_AV, sim_BV, distance_func
-    )
+    return _compute_periodic_features_core(sim_elec, sim_atom, sim_AV, sim_BV, distance_func)
 
 
 def construct_periodic_input_features_nvt_fixed(
@@ -371,9 +355,7 @@ def construct_periodic_input_features_npt_quantum(
     sim_AV = jnp.eye(3) / jnp.pi / 2
     sim_BV = jnp.eye(3) * jnp.pi * 2
 
-    return construct_periodic_input_features(
-        x, simulation_cell, ndim, distance_type, sim_AV=sim_AV, sim_BV=sim_BV
-    )
+    return construct_periodic_input_features(x, simulation_cell, ndim, distance_type, sim_AV=sim_AV, sim_BV=sim_BV)
 
 
 def construct_periodic_input_features_fixed_npt_quantum(
@@ -395,9 +377,7 @@ def construct_periodic_input_features_fixed_npt_quantum(
     atoms = jnp.asarray(simulation_cell.atom_coords(), dtype=simulation_cell.a.dtype)
     sim_atom, _ = enforce_pbc(simulation_cell.a, atoms)
 
-    return _compute_periodic_features_core(
-        sim_elec, sim_atom, sim_AV, sim_BV, distance_func, compute_aa=True
-    )
+    return _compute_periodic_features_core(sim_elec, sim_atom, sim_AV, sim_BV, distance_func, compute_aa=True)
 
 
 def construct_periodic_2body_init_features(
@@ -493,13 +473,9 @@ def _init_atom_params(
         "alpha": jnp.zeros(1),
     }
     # Initialize atom_double layers
-    params, key = _init_atom_double_layers(
-        params, key, dims_atom_double, simulation_cell
-    )
+    params, key = _init_atom_double_layers(params, key, dims_atom_double, simulation_cell)
 
-    params, key = _init_atom_distance_layer(
-        params, key, dims_atom_double, simulation_cell
-    )
+    params, key = _init_atom_distance_layer(params, key, dims_atom_double, simulation_cell)
 
     # Initialize atom_envelope based on new parameters
     params, key = _init_atom_envelope(
@@ -571,12 +547,9 @@ def _init_atom_distance_layer(
     """
     # Initialize weights for the non-hybrid case (output dimension 1)
     key, subkey = jax.random.split(key)
-    params["atom_distance"]["w"] = (
-        jax.random.normal(  # Renamed to avoid conflict if base 'w' is used elsewhere
-            subkey, shape=(dims_atom_double[-1], 1)
-        )
-        / jnp.sqrt(float(dims_atom_double[-1]))
-    )
+    params["atom_distance"]["w"] = jax.random.normal(  # Renamed to avoid conflict if base 'w' is used elsewhere
+        subkey, shape=(dims_atom_double[-1], 1)
+    ) / jnp.sqrt(float(dims_atom_double[-1]))
 
     key, subkey = jax.random.split(key)
     params["atom_distance"]["b"] = (  # Renamed for clarity
@@ -614,18 +587,14 @@ def _init_atom_envelope(
     # Initialize pi
     key, subkey_pi = jax.random.split(key)
     if ensemble == "NPT":
-        params["atom_envelope"]["pi"] = (natom**0.3333) * rs / 1.414 * jnp.ones(
-            param_shape
-        ) + jax.random.normal(subkey_pi, shape=param_shape)
-    elif ensemble == "NVT":
-        params["atom_envelope"]["pi"] = jnp.ones(param_shape) + jax.random.normal(
+        params["atom_envelope"]["pi"] = (natom**0.3333) * rs / 1.414 * jnp.ones(param_shape) + jax.random.normal(
             subkey_pi, shape=param_shape
         )
+    elif ensemble == "NVT":
+        params["atom_envelope"]["pi"] = jnp.ones(param_shape) + jax.random.normal(subkey_pi, shape=param_shape)
     else:
         raise ValueError(f"Unsupported ensemble: {ensemble}")
-    params["atom_envelope"]["b"] = construct_periodic_2body_init_features(
-        simulation_cell, distance_type
-    )
+    params["atom_envelope"]["b"] = construct_periodic_2body_init_features(simulation_cell, distance_type)
 
     return params, key
 
@@ -695,37 +664,33 @@ def _init_elec_params(
         elif envelope_type == "diagonal":
             params["envelope"][i]["sigma"] = jnp.ones((natom, 3, nparam))
         elif envelope_type == "full":
-            params["envelope"][i]["sigma"] = jnp.tile(
-                jnp.eye(6)[..., None, None], [1, 1, natom, nparam]
-            )
+            params["envelope"][i]["sigma"] = jnp.tile(jnp.eye(6)[..., None, None], [1, 1, natom, nparam])
 
     for i in range(len(hidden_dims)):
         key, subkey = jax.random.split(key)
-        params["single"][i]["w"] = jax.random.normal(
-            subkey, shape=(dims_one_in[i], dims_one_out[i])
-        ) / jnp.sqrt(float(dims_one_in[i]))
+        params["single"][i]["w"] = jax.random.normal(subkey, shape=(dims_one_in[i], dims_one_out[i])) / jnp.sqrt(
+            float(dims_one_in[i])
+        )
 
         key, subkey = jax.random.split(key)
         params["single"][i]["b"] = jax.random.normal(subkey, shape=(dims_one_out[i],))
 
         if i < len_double:
             key, subkey = jax.random.split(key)
-            params["double"][i]["w"] = jax.random.normal(
-                subkey, shape=(dims_two[i], dims_two[i + 1])
-            ) / jnp.sqrt(float(dims_two[i]))
+            params["double"][i]["w"] = jax.random.normal(subkey, shape=(dims_two[i], dims_two[i + 1])) / jnp.sqrt(
+                float(dims_two[i])
+            )
 
             key, subkey = jax.random.split(key)
-            params["double"][i]["b"] = jax.random.normal(
-                subkey, shape=(dims_two[i + 1],)
-            )
+            params["double"][i]["b"] = jax.random.normal(subkey, shape=(dims_two[i + 1],))
 
     for i, spin in enumerate(active_spin_channels):
         nparam = sum(spins) * determinants if full_det else spin * determinants
         key, subkey = jax.random.split(key)
         params["orbital"].append({})
-        params["orbital"][i]["w"] = jax.random.normal(
-            subkey, shape=(dims_one_in[-1], 2 * nparam)
-        ) / jnp.sqrt(float(dims_one_in[-1]))
+        params["orbital"][i]["w"] = jax.random.normal(subkey, shape=(dims_one_in[-1], 2 * nparam)) / jnp.sqrt(
+            float(dims_one_in[-1])
+        )
         if bias_orbitals:
             key, subkey = jax.random.split(key)
             params["orbital"][i]["b"] = jax.random.normal(subkey, shape=(2 * nparam,))
@@ -746,9 +711,7 @@ def _init_cell_params(simulation_cell: PyscfCell, mode="diag") -> Array:
     if mode == "diag":
         return jnp.diagonal(simulation_cell.lattice_vectors())
     elif mode == "angle":
-        latvec = (
-            simulation_cell.lattice_vectors()
-        )  # assumming each row is a lattice vector
+        latvec = simulation_cell.lattice_vectors()  # assumming each row is a lattice vector
         a = jnp.linalg.norm(latvec[0])
         b = jnp.linalg.norm(latvec[1])
         c = jnp.linalg.norm(latvec[2])
@@ -757,9 +720,7 @@ def _init_cell_params(simulation_cell: PyscfCell, mode="diag") -> Array:
         gamma = jnp.arccos(jnp.dot(latvec[0], latvec[1]) / (a * b))
         return jnp.array([a, b, c, alpha, beta, gamma])
     elif mode == "partial_angle":
-        latvec = (
-            simulation_cell.lattice_vectors()
-        )  # assumming each row is a lattice vector
+        latvec = simulation_cell.lattice_vectors()  # assumming each row is a lattice vector
         a = jnp.linalg.norm(latvec[0])
         b = jnp.linalg.norm(latvec[1])
         c = jnp.linalg.norm(latvec[2])
@@ -832,9 +793,7 @@ def full_envelope(ae: Array, params: dict) -> Array:
 
     """
     r_ae = apply_covariance(ae, params["sigma"])
-    r_ae = curvature_tags_and_blocks.register_qmc(
-        r_ae, ae, params["sigma"], type="full"
-    )
+    r_ae = curvature_tags_and_blocks.register_qmc(r_ae, ae, params["sigma"], type="full")
     r_ae = jnp.linalg.norm(r_ae, axis=2)
     return jnp.sum(jnp.exp(-r_ae) * params["pi"], axis=1)
 
@@ -875,9 +834,7 @@ def atom_envelop_2body_nonhybrid_full_dynamic(r_aa: Array, params: dict) -> Arra
     return jnp.sum(mat)
 
 
-def atom_envelop_2body_nonhybrid_full_fixed(
-    r_aa: Array, params: dict, distance_aa: Array
-) -> Array:
+def atom_envelop_2body_nonhybrid_full_fixed(r_aa: Array, params: dict, distance_aa: Array) -> Array:
     """Computes a 2-body full fixed envelope function.
 
     Args:
@@ -942,9 +899,7 @@ def slogdet(x: Array) -> tuple[Array, Array]:
     return sign, logdet
 
 
-def logdet_matmul(
-    xs: Sequence[Array], w: Array | None = None
-) -> tuple[Array, Array]:
+def logdet_matmul(xs: Sequence[Array], w: Array | None = None) -> tuple[Array, Array]:
     """Combines determinants and takes dot product with weights in log-domain.
 
     We use the log-sum-exp trick to reduce numerical instabilities.
@@ -967,9 +922,7 @@ def logdet_matmul(
     # wavefunction). Avoid this by not going into the log domain for 1x1 matrices.
     # Pass initial value to functools so det1d = 1 if all matrices are larger than
     # 1x1.
-    det1d = functools.reduce(
-        operator.mul, [x.reshape(-1) for x in xs if x.shape[-1] == 1], 1
-    )
+    det1d = functools.reduce(operator.mul, [x.reshape(-1) for x in xs if x.shape[-1] == 1], 1)
     # Pass initial value to functools so sign_in = 1, logdet = 0 if all matrices
     # are 1x1.
     phase_in, logdet = functools.reduce(
@@ -1040,9 +993,7 @@ def rezero(x: Array, y: Array, params: dict) -> Array:
     return params["alpha"] * x + y
 
 
-def elec_forward(
-    h_one: Array, h_two: Array, params: dict, spins: tuple[int, int]
-) -> Sequence[Array]:
+def elec_forward(h_one: Array, h_two: Array, params: dict, spins: tuple[int, int]) -> Sequence[Array]:
     """Computes the forward pass for the electron stream of the FermiNet.
 
     Args:
@@ -1059,9 +1010,7 @@ def elec_forward(
         h_one_in = construct_symmetric_features(h_one, h_two, spins)
         # Execute next layer
         h_one_next = jnp.tanh(linear_layer(h_one_in, **params["single"][i]))
-        h_two_next = jnp.tanh(
-            vmap_linear_layer(h_two, params["double"][i]["w"], params["double"][i]["b"])
-        )
+        h_two_next = jnp.tanh(vmap_linear_layer(h_two, params["double"][i]["w"], params["double"][i]["b"]))
         h_one = residual(h_one, h_one_next)
         h_two = residual(h_two, h_two_next)
     if len(params["double"]) != len(params["single"]):
@@ -1107,11 +1056,7 @@ def atom_forward(h_atom: Array, params: dict) -> Array:
 
     """
     for i in range(len(params["atom_double"])):
-        h_atom_next = jnp.tanh(
-            vmap_linear_layer(
-                h_atom, params["atom_double"][i]["w"], params["atom_double"][i]["b"]
-            )
-        )
+        h_atom_next = jnp.tanh(vmap_linear_layer(h_atom, params["atom_double"][i]["w"], params["atom_double"][i]["b"]))
         h_atom = residual(h_atom, h_atom_next)
     return h_atom
 
@@ -1157,30 +1102,24 @@ def get_jacobian(cellpar: Array, lattice_config: CrystalLatticeConfig) -> Array:
         _, sin_beta, sin_gamma = jnp.sin(angles)
         cosas = (cos_beta * cos_gamma - cos_alpha) / (sin_beta * sin_gamma)
         sinas = jnp.sqrt(1 - cosas**2)
-        trans_matrix = jnp.array(
-            [
-                [a, 0, 0],
-                [b * cos_gamma, b * sin_gamma, 0],
-                [c * cos_beta, -c * sin_beta * cosas, c * sin_beta * sinas],
-            ]
-        )
+        trans_matrix = jnp.array([
+            [a, 0, 0],
+            [b * cos_gamma, b * sin_gamma, 0],
+            [c * cos_beta, -c * sin_beta * cosas, c * sin_beta * sinas],
+        ])
     elif lattice_config.mode == "partial_angle":
         a, b, c = p_cell  # lengths
-        angles = jnp.asarray(
-            [lattice_config.alpha, lattice_config.beta, lattice_config.gamma]
-        )
+        angles = jnp.asarray([lattice_config.alpha, lattice_config.beta, lattice_config.gamma])
         # Cosine and sine terms
         cos_alpha, cos_beta, cos_gamma = jnp.cos(angles)
         _, sin_beta, sin_gamma = jnp.sin(angles)
         cosas = (cos_beta * cos_gamma - cos_alpha) / (sin_beta * sin_gamma)
         sinas = jnp.sqrt(1 - cosas**2)
-        trans_matrix = jnp.array(
-            [
-                [a, 0, 0],
-                [b * cos_gamma, b * sin_gamma, 0],
-                [c * cos_beta, -c * sin_beta * cosas, c * sin_beta * sinas],
-            ]
-        )
+        trans_matrix = jnp.array([
+            [a, 0, 0],
+            [b * cos_gamma, b * sin_gamma, 0],
+            [c * cos_beta, -c * sin_beta * cosas, c * sin_beta * sinas],
+        ])
     else:
         raise ValueError(f"mode {lattice_config.mode} is not supported.")
     return trans_matrix.astype(p_cell.dtype)
@@ -1216,24 +1155,20 @@ def get_inv_jacobian(cellpar: Array, lattice_config: CrystalLatticeConfig) -> Ar
         cot_gamma = cos_gamma * csc_gamma
         cot_beta = cos_beta * csc_beta
         cot_as = cosas * csc_as
-        trans_matrix = jnp.array(
+        trans_matrix = jnp.array([
+            [inv_a, 0, 0],
+            [-cot_gamma * inv_a, csc_gamma * inv_b, 0],
             [
-                [inv_a, 0, 0],
-                [-cot_gamma * inv_a, csc_gamma * inv_b, 0],
-                [
-                    -(cot_beta + cosas * cot_gamma) * csc_as * inv_a,
-                    cot_as * csc_gamma * inv_b,
-                    csc_beta * csc_as * inv_c,
-                ],
-            ]
-        )
+                -(cot_beta + cosas * cot_gamma) * csc_as * inv_a,
+                cot_as * csc_gamma * inv_b,
+                csc_beta * csc_as * inv_c,
+            ],
+        ])
     elif lattice_config.mode == "diag":
         trans_matrix = jnp.diag(1.0 / p_cell)
     elif lattice_config.mode == "partial_angle":
         inv_a, inv_b, inv_c = 1.0 / p_cell  # lengths
-        angles = jnp.asarray(
-            [lattice_config.alpha, lattice_config.beta, lattice_config.gamma]
-        )
+        angles = jnp.asarray([lattice_config.alpha, lattice_config.beta, lattice_config.gamma])
         # Cosine and sine terms
         cos_alpha, cos_beta, cos_gamma = jnp.cos(angles)
         sin_angles = jnp.sin(angles[1:])
@@ -1243,25 +1178,21 @@ def get_inv_jacobian(cellpar: Array, lattice_config: CrystalLatticeConfig) -> Ar
         cot_gamma = cos_gamma * csc_gamma
         cot_beta = cos_beta * csc_beta
         cot_as = cosas * csc_as
-        trans_matrix = jnp.array(
+        trans_matrix = jnp.array([
+            [inv_a, 0, 0],
+            [-cot_gamma * inv_a, csc_gamma * inv_b, 0],
             [
-                [inv_a, 0, 0],
-                [-cot_gamma * inv_a, csc_gamma * inv_b, 0],
-                [
-                    -(cot_beta + cosas * cot_gamma) * csc_as * inv_a,
-                    cot_as * csc_gamma * inv_b,
-                    csc_beta * csc_as * inv_c,
-                ],
-            ]
-        )
+                -(cot_beta + cosas * cot_gamma) * csc_as * inv_a,
+                cot_as * csc_gamma * inv_b,
+                csc_beta * csc_as * inv_c,
+            ],
+        ])
     else:
         raise ValueError(f"mode {lattice_config.mode} is not supported.")
     return trans_matrix.astype(p_cell.dtype)
 
 
-def convert_to_simulation_cell(
-    cellpar: Array, x: Array, lattice_config: CrystalLatticeConfig
-) -> tuple[Array, Array]:
+def convert_to_simulation_cell(cellpar: Array, x: Array, lattice_config: CrystalLatticeConfig) -> tuple[Array, Array]:
     """Converts the input x (fractional 0-1) to the simulation cell Cartesian coordinates.
 
     Args:
@@ -1306,8 +1237,6 @@ def eval_phase(
         klist = jnp.concatenate(klist, axis=0)
         kdot_xs = [jnp.matmul(x, klist.T) for x, ne in zip(xs, spins) if ne > 0]
     else:
-        kdot_xs = [
-            jnp.matmul(x, kpt.T) for x, kpt, ne in zip(xs, klist, spins) if ne > 0
-        ]
+        kdot_xs = [jnp.matmul(x, kpt.T) for x, kpt, ne in zip(xs, klist, spins) if ne > 0]
     phases = [jnp.exp(1j * kdot_x) for kdot_x in kdot_xs]
     return phases

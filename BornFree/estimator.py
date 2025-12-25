@@ -72,14 +72,10 @@ class get_rdf:
 
         i, j = jnp.triu_indices(n, k=1)
         rij = (x[:, None, :] - y[None, :, :])[i, j]
-        vmap_find_nearest_distance = jax.vmap(
-            self.find_nearest_distance, in_axes=(0, None), out_axes=0
-        )
+        vmap_find_nearest_distance = jax.vmap(self.find_nearest_distance, in_axes=(0, None), out_axes=0)
         dij = vmap_find_nearest_distance(rij, Ls)  # (n*(n-1)/2)
 
-        hist, bin_edges = jnp.histogram(
-            dij.reshape(-1), range=[0, 0.9 * L], bins=self.n_bins
-        )
+        hist, bin_edges = jnp.histogram(dij.reshape(-1), range=[0, 0.9 * L], bins=self.n_bins)
         r = (bin_edges[:-1] + bin_edges[1:]) / 2
         dr = bin_edges[1] - bin_edges[0]
         gr = hist / dij.size / (4 * jnp.pi * r**2 * dr / v)
@@ -111,9 +107,7 @@ class get_xrd:
         self.two_theta_range = two_theta_range
         self.step = step
         self.gamma = gamma
-        self.xrd_calculator = XRDCalculator(
-            wavelength=wavelength, debye_waller_factors=None, symprec=0
-        )
+        self.xrd_calculator = XRDCalculator(wavelength=wavelength, debye_waller_factors=None, symprec=0)
 
     def load_atoms(self, xp, Ls, i):
         """Loads atomic configuration into ASE Atoms object.
@@ -150,9 +144,7 @@ class get_xrd:
             Tuple of (two_theta, averaged_intensity).
 
         """
-        two_theta_values = jnp.arange(
-            self.two_theta_range[0], self.two_theta_range[1], self.step
-        )
+        two_theta_values = jnp.arange(self.two_theta_range[0], self.two_theta_range[1], self.step)
         total_intensity = jnp.zeros_like(two_theta_values)
 
         for i in range(n_samples):
@@ -161,17 +153,13 @@ class get_xrd:
             atoms.symbols = ["H"] * len(atoms)
             structure = AseAtomsAdaptor.get_structure(atoms.repeat((1, 1, 1)))
             # Compute XRD pattern
-            xrd_pattern = self.xrd_calculator.get_pattern(
-                  structure, two_theta_range=self.two_theta_range
-              )
+            xrd_pattern = self.xrd_calculator.get_pattern(structure, two_theta_range=self.two_theta_range)
 
             def intensity_func(x, y):
                 return y * self.lorentz(two_theta_values, x, self.gamma)
 
             vmap_intensity_func = jax.vmap(intensity_func, in_axes=(0, 0), out_axes=0)
-            intensities = jnp.sum(
-                vmap_intensity_func(xrd_pattern.x, xrd_pattern.y), axis=0
-            )
+            intensities = jnp.sum(vmap_intensity_func(xrd_pattern.x, xrd_pattern.y), axis=0)
             # Add to the total intensities
             total_intensity += intensities
 
@@ -206,9 +194,7 @@ class get_xrd:
             Tuple of (d_spacing, normalized_intensity).
 
         """
-        two_theta, averaged_intensity = self.compute_average_xrd_pymatgen(
-            xp, Ls, n_samples=n_samples
-        )
+        two_theta, averaged_intensity = self.compute_average_xrd_pymatgen(xp, Ls, n_samples=n_samples)
 
         d_spacing = self.two_theta_to_d_spacing(two_theta)
 

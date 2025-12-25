@@ -74,7 +74,5 @@ setup(
         "Topic :: Scientific/Engineering :: Physics",
         "Topic :: Scientific/Engineering :: Chemistry",
     ],
-    dependency_links=[
-        "https://storage.googleapis.com/jax-releases/jax_cuda_releases.html"
-    ],
+    dependency_links=["https://storage.googleapis.com/jax-releases/jax_cuda_releases.html"],
 )

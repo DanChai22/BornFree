@@ -153,14 +153,10 @@ class QmcBlockedDense(kfac_jax.TwoKroneckerFactored):
         k, m, j, n = self.parameters_shapes[0]
         cache = dict()
         if exact_powers_to_cache:
-            raise NotImplementedError(
-                "Caching of exact powers is not yet implemented for QmcBlockedDense."
-            )
+            raise NotImplementedError("Caching of exact powers is not yet implemented for QmcBlockedDense.")
         for power in approx_powers_to_cache:
             if power != -1:
-                raise NotImplementedError(
-                    f"Approximations for power {power} is not yet implemented."
-                )
+                raise NotImplementedError(f"Approximations for power {power} is not yet implemented.")
             cache[str(power)] = dict(
                 inputs_factor=jnp.zeros([j, k, k]),
                 outputs_factor=jnp.zeros([j, m * n, m * n]),
@@ -168,9 +164,7 @@ class QmcBlockedDense(kfac_jax.TwoKroneckerFactored):
         return kfac_jax.TwoKroneckerFactored.State(
             cache=cache,
             inputs_factor=kfac_jax.utils.WeightedMovingAverage.zeros_array((j, k, k)),
-            outputs_factor=kfac_jax.utils.WeightedMovingAverage.zeros_array(
-                (j, m * n, m * n)
-            ),
+            outputs_factor=kfac_jax.utils.WeightedMovingAverage.zeros_array((j, m * n, m * n)),
         )
 
     def _update_cache(
@@ -184,18 +178,12 @@ class QmcBlockedDense(kfac_jax.TwoKroneckerFactored):
         del eigenvalues
 
         if exact_powers:
-            raise NotImplementedError(
-                "Caching of exact powers is not yet implemented for QmcBlockedDense."
-            )
+            raise NotImplementedError("Caching of exact powers is not yet implemented for QmcBlockedDense.")
         for power in approx_powers:
             if power != -1:
-                raise NotImplementedError(
-                    f"Approximations for power {power} is not yet implemented."
-                )
+                raise NotImplementedError(f"Approximations for power {power} is not yet implemented.")
             cache = state.cache[str(power)]
-            pi_adjusted_inverse = jax.vmap(
-                kfac_jax.utils.pi_adjusted_kronecker_inverse, (0, None), (0, 0)
-            )
+            pi_adjusted_inverse = jax.vmap(kfac_jax.utils.pi_adjusted_kronecker_inverse, (0, None), (0, 0))
             cache["inputs_factor"], cache["outputs_factor"] = pi_adjusted_inverse(
                 state.inputs_factor.value,
                 state.outputs_factor.value,
@@ -225,15 +213,10 @@ class QmcBlockedDense(kfac_jax.TwoKroneckerFactored):
             v = jnp.transpose(v.reshape([j, k, m, n]), [1, 2, 0, 3])
             v = v + identity_weight * w
         elif exact_power:
-            raise NotImplementedError(
-                "Exact powers is not yet implemented for QmcBlockedDense."
-            )
+            raise NotImplementedError("Exact powers is not yet implemented for QmcBlockedDense.")
         else:
             if not use_cached:
-                raise NotImplementedError(
-                    "Caching of exact powers is not yet implemented for "
-                    "QmcBlockedDense."
-                )
+                raise NotImplementedError("Caching of exact powers is not yet implemented for QmcBlockedDense.")
             else:
                 v = jnp.transpose(v, [2, 0, 1, 3]).reshape([j, k, m * n])
                 v = vmap_matmul(state.cache[str(power)]["inputs_factor"], v)

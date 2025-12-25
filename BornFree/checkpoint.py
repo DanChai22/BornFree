@@ -84,9 +84,7 @@ def find_last_checkpoint(ckpt_path: str | None = None) -> str | None:
                     np.load(f, allow_pickle=True)
                     return fname
                 except (OSError, EOFError, zipfile.BadZipFile):
-                    logging.info(
-                        "Error loading checkpoint %s. Trying next checkpoint...", fname
-                    )
+                    logging.info("Error loading checkpoint %s. Trying next checkpoint...", fname)
     return None
 
 
@@ -226,9 +224,7 @@ def restore(restore_filename: str, batch_size: int | None = None, shape_check=Tr
         opt_state = ckpt_data["opt_state"].tolist()
         atom_mcmc_width = ckpt_data["atom_mcmc_width"].tolist()
         elec_mcmc_width = ckpt_data["elec_mcmc_width"].tolist()
-        wandb_run_id = (
-            ckpt_data["wandb_run_id"].item() if "wandb_run_id" in ckpt_data else None
-        )
+        wandb_run_id = ckpt_data["wandb_run_id"].item() if "wandb_run_id" in ckpt_data else None
         if shape_check:
             if data.shape[0] != jax.local_device_count():
                 raise ValueError(
@@ -253,9 +249,7 @@ def setup_checkpoint_and_config(cfg: base_config.BornFreeConfig):
     """
     ckpt_save_path = create_save_path(cfg.log.save_path)
     ckpt_restore_path = get_restore_path(cfg.log.restore_path)
-    ckpt_restore_filename = find_last_checkpoint(
-        ckpt_save_path
-    ) or find_last_checkpoint(ckpt_restore_path)
+    ckpt_restore_filename = find_last_checkpoint(ckpt_save_path) or find_last_checkpoint(ckpt_restore_path)
 
     config_save_path = os.path.join(ckpt_save_path, "config.yaml")
     writers.save_config_to_yaml(cfg, config_save_path)
@@ -292,9 +286,6 @@ def should_save_checkpoint(
     return (
         time.time() - time_of_last_ckpt > cfg.log.save_frequency * 60
         or t >= cfg.optim.iterations - 1
-        or (
-            cfg.log.save_frequency_in_step > 0
-            and t % cfg.log.save_frequency_in_step == 0
-        )
+        or (cfg.log.save_frequency_in_step > 0 and t % cfg.log.save_frequency_in_step == 0)
         or save_at_warmup_end
     )

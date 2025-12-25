@@ -86,9 +86,7 @@ def constant_temperature(temp: float) -> float:
     return temp
 
 
-def temperature_schedule(
-    t: int, annealing_config: base_config.AnnealingConfig
-) -> float:
+def temperature_schedule(t: int, annealing_config: base_config.AnnealingConfig) -> float:
     """Calculate temperature at given step based on annealing strategy.
 
     Args:
@@ -99,13 +97,9 @@ def temperature_schedule(
         Temperature at step t according to the specified annealing strategy
 
     """
-    logger.info(
-        "Using %s annealing strategy", annealing_config.annealing_type
-    )
+    logger.info("Using %s annealing strategy", annealing_config.annealing_type)
     if annealing_config.annealing_type == "geometric":
-        return geometric_cooling(
-            annealing_config.initial_temp, t, annealing_config.beta
-        )
+        return geometric_cooling(annealing_config.initial_temp, t, annealing_config.beta)
     elif annealing_config.annealing_type == "linear":
         return linear_cooling(annealing_config.initial_temp, t, annealing_config.beta)
     elif annealing_config.annealing_type == "cauchy":
@@ -113,9 +107,7 @@ def temperature_schedule(
     elif annealing_config.annealing_type == "constant":
         return constant_temperature(annealing_config.final_temp)
     else:
-        raise ValueError(
-            f"Not supported annealing type: {annealing_config.annealing_type}"
-        )
+        raise ValueError(f"Not supported annealing type: {annealing_config.annealing_type}")
 
 
 def init_cell_annealing_width(
@@ -184,9 +176,7 @@ def setup_local_sampling_step(
         annealing_steps=None,
     )
 
-    return mcmc.MCMCStepFactory.create_step(
-        mcmc_config, batch_networks["logabs"], cfg.mcmc.mcmc_type
-    )
+    return mcmc.MCMCStepFactory.create_step(mcmc_config, batch_networks["logabs"], cfg.mcmc.mcmc_type)
 
 
 def setup_annealing_mcmc_step(
@@ -221,9 +211,7 @@ def setup_annealing_mcmc_step(
         return total_gibbs(params, data)
 
     def calculate_gibbs_func(mcmc_step, total_gibbs):
-        logger.info(
-            "Using local sampling with %s steps", cfg.mcmc.annealing.local_steps
-        )
+        logger.info("Using local sampling with %s steps", cfg.mcmc.annealing.local_steps)
 
         @jax.jit
         def calculate_gibbs_with_local_sampling(params, data, key, mcmc_width):
@@ -251,9 +239,7 @@ def setup_annealing_mcmc_step(
 
     calculate_gibbs = calculate_gibbs_func(mcmc_step, total_gibbs)
 
-    gibbs_function = (
-        calculate_gibbs if cfg.mcmc.annealing.local_sampling else wrap_total_gibbs
-    )
+    gibbs_function = calculate_gibbs if cfg.mcmc.annealing.local_sampling else wrap_total_gibbs
 
     mcmc_config = mcmc.MCMCConfig(
         batch_per_device=device_batch_size,

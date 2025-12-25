@@ -62,9 +62,7 @@ def setup_mcmc_step(
         current_temp=None,
         annealing_steps=None,
     )
-    return mcmc.MCMCStepFactory.create_step(
-        mcmc_config, batch_networks["logabs"], cfg.mcmc.mcmc_type
-    )
+    return mcmc.MCMCStepFactory.create_step(mcmc_config, batch_networks["logabs"], cfg.mcmc.mcmc_type)
 
 
 def init_mcmc_width(
@@ -86,12 +84,8 @@ def init_mcmc_width(
 
     """
     if (elec_mcmc_width_ckpt is not None) and (atom_mcmc_width_ckpt is not None):
-        atom_mcmc_width = kfac_jax.utils.broadcast_all_local_devices(
-            jnp.asarray(atom_mcmc_width_ckpt, dtype=precision)
-        )
-        elec_mcmc_width = kfac_jax.utils.broadcast_all_local_devices(
-            jnp.asarray(elec_mcmc_width_ckpt, dtype=precision)
-        )
+        atom_mcmc_width = kfac_jax.utils.broadcast_all_local_devices(jnp.asarray(atom_mcmc_width_ckpt, dtype=precision))
+        elec_mcmc_width = kfac_jax.utils.broadcast_all_local_devices(jnp.asarray(elec_mcmc_width_ckpt, dtype=precision))
     else:
         elec_mcmc_width = kfac_jax.utils.replicate_all_local_devices(
             jnp.asarray(cfg.mcmc.elec_move_width, dtype=precision)
@@ -103,9 +97,7 @@ def init_mcmc_width(
     return atom_mcmc_width, elec_mcmc_width
 
 
-def get_mcmc_width(
-    atom_width: float, elec_width: float, nuclear_treatment: str
-) -> tuple[float] | tuple[float, float]:
+def get_mcmc_width(atom_width: float, elec_width: float, nuclear_treatment: str) -> tuple[float] | tuple[float, float]:
     """Get MCMC width based on model type.
 
     Args:
@@ -200,13 +192,9 @@ def update_mcmc_width_if_needed(
         atom_mcmc_width, elec_mcmc_width = update_mcmc_width(
             atom_mcmc_width, elec_mcmc_width, pmoves, cfg.mcmc.mcmc_type
         )
-        mcmc_width = get_mcmc_width(
-            atom_mcmc_width, elec_mcmc_width, cfg.nuclear_treatment
-        )
+        mcmc_width = get_mcmc_width(atom_mcmc_width, elec_mcmc_width, cfg.nuclear_treatment)
         pmoves[:] = 0
     else:
-        mcmc_width = get_mcmc_width(
-            atom_mcmc_width, elec_mcmc_width, cfg.nuclear_treatment
-        )
+        mcmc_width = get_mcmc_width(atom_mcmc_width, elec_mcmc_width, cfg.nuclear_treatment)
 
     return atom_mcmc_width, elec_mcmc_width, mcmc_width, pmoves

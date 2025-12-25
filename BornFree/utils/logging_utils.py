@@ -67,27 +67,13 @@ def extract_and_scale_metrics(loss, aux_data, scale):
     metrics = {}
 
     metrics["loss"] = loss[0] / scale if loss is not None else None
-    metrics["variance"] = (
-        aux_data.variance[0] / scale**2 if aux_data is not None else None
-    )
-    metrics["imaginary"] = (
-        aux_data.imaginary[0] / scale if aux_data is not None else None
-    )
-    metrics["kinetic"] = (
-        jnp.mean(aux_data.kinetic) / scale if aux_data is not None else None
-    )
-    metrics["ewald"] = (
-        jnp.mean(aux_data.ewald) / scale if aux_data is not None else None
-    )
-    metrics["ee"] = (
-        jnp.mean(aux_data.ewald_ee) / scale if aux_data is not None else None
-    )
-    metrics["ei"] = (
-        jnp.mean(aux_data.ewald_ei) / scale if aux_data is not None else None
-    )
-    metrics["ii"] = (
-        jnp.mean(aux_data.ewald_ii) / scale if aux_data is not None else None
-    )
+    metrics["variance"] = aux_data.variance[0] / scale**2 if aux_data is not None else None
+    metrics["imaginary"] = aux_data.imaginary[0] / scale if aux_data is not None else None
+    metrics["kinetic"] = jnp.mean(aux_data.kinetic) / scale if aux_data is not None else None
+    metrics["ewald"] = jnp.mean(aux_data.ewald) / scale if aux_data is not None else None
+    metrics["ee"] = jnp.mean(aux_data.ewald_ee) / scale if aux_data is not None else None
+    metrics["ei"] = jnp.mean(aux_data.ewald_ei) / scale if aux_data is not None else None
+    metrics["ii"] = jnp.mean(aux_data.ewald_ii) / scale if aux_data is not None else None
 
     # NPT-specific metric
     if aux_data is not None and hasattr(aux_data, "pv"):
@@ -98,9 +84,7 @@ def extract_and_scale_metrics(loss, aux_data, scale):
     return metrics
 
 
-def initialize_wandb(
-    cfg: base_config.BornFreeConfig, run_id_to_resume: str | None
-) -> str | None:
+def initialize_wandb(cfg: base_config.BornFreeConfig, run_id_to_resume: str | None) -> str | None:
     """Initialize Weights & Biases on the main process.
 
     Args:
@@ -217,9 +201,7 @@ def log_training_step(
         if params is None or pv is None:
             raise ValueError("params and pv are required for NPT logging")
 
-        volume = jnp.linalg.det(
-            network_block.get_jacobian(params["cell"][0], cfg.crystal.lattice)
-        )
+        volume = jnp.linalg.det(network_block.get_jacobian(params["cell"][0], cfg.crystal.lattice))
         _, p = units.pressure_estimator(kinetic.real, ewald - pv, volume)
         log_metrics[format_key("estimated_pressure")] = np.asarray(p)
 
@@ -339,9 +321,7 @@ def log_bo_energy(
         elif cfg.ensemble == "NVT":
             lattice = None
         else:
-            raise ValueError(
-                f"Unsupported ensemble: {cfg.ensemble}. Use 'nvt' or 'npt'."
-            )
+            raise ValueError(f"Unsupported ensemble: {cfg.ensemble}. Use 'nvt' or 'npt'.")
 
         # Create Born-Oppenheimer kinetic energy function
         kindif = hamiltonian.make_BO_kin(
@@ -356,9 +336,7 @@ def log_bo_energy(
             cfg.ensemble,
         )
 
-        kin_atom_total, kin_atom_atom, kin_atom_elec, kin_atom_cross = kindif(
-            params, data
-        )
+        kin_atom_total, kin_atom_atom, kin_atom_elec, kin_atom_cross = kindif(params, data)
 
         # Handle NPT specific unpacking if necessary (based on original code behavior)
         kin_atom_total = kin_atom_total[0]
@@ -368,8 +346,7 @@ def log_bo_energy(
 
         if jax.process_index() == 0:
             logger.info(
-                "BO energy: first line %s, second line, first term %s, "
-                "second term %s, third term %s",
+                "BO energy: first line %s, second line, first term %s, second term %s, third term %s",
                 kin_atom_total,
                 kin_atom_atom,
                 kin_atom_elec,

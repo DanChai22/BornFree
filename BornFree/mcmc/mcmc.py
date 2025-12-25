@@ -333,9 +333,7 @@ class MetropolisHastings:
         cond = ratio > rnd
         c_new = jnp.where(cond[..., None], c2, c1)
         g_new = jnp.where(cond, g_2, g_1)
-        aux_new = jax.tree_util.tree_map(
-            lambda a1, a2: jnp.where(cond, a2, a1), aux_1, aux_2
-        )
+        aux_new = jax.tree_util.tree_map(lambda a1, a2: jnp.where(cond, a2, a1), aux_1, aux_2)
         num_accepts += jnp.sum(cond)
         return c_new, key, g_new, aux_new, num_accepts
 
@@ -412,9 +410,7 @@ class MCMCSampler:
             x1_reshaped = jnp.reshape(x1, [n, -1, 1, 3])
             hmean1 = _harmonic_mean(x1_reshaped, self.config.atoms)
 
-            x2_reshaped = x1_reshaped + stddev * hmean1 * jax.random.normal(
-                subkey, shape=x1_reshaped.shape
-            )
+            x2_reshaped = x1_reshaped + stddev * hmean1 * jax.random.normal(subkey, shape=x1_reshaped.shape)
             lp_2 = 2.0 * f(params, x2_reshaped)
             hmean2 = _harmonic_mean(x2_reshaped, self.config.atoms)
 
@@ -490,9 +486,7 @@ class MCMCSampler:
         else:
             n = x1.shape[0]
             x1 = jnp.reshape(x1, [n, -1, 1, 3])
-            hmean1 = _harmonic_mean(
-                x1, self.config.atoms
-            )  # harmonic mean of distances to nuclei
+            hmean1 = _harmonic_mean(x1, self.config.atoms)  # harmonic mean of distances to nuclei
 
             x2 = x1 + stddev * hmean1 * jax.random.normal(subkey, shape=x1.shape)
             x2 = jnp.reshape(x2, [n, -1])
@@ -500,9 +494,7 @@ class MCMCSampler:
             lp_2 = 2.0 * f(params, x2)
 
             x2 = jnp.reshape(x2, [n, -1, 1, 3])
-            hmean2 = _harmonic_mean(
-                x2, self.config.atoms
-            )  # needed for probability of reverse jump
+            hmean2 = _harmonic_mean(x2, self.config.atoms)  # needed for probability of reverse jump
 
             lq_1 = _log_prob_gaussian(x1, x2, stddev * hmean1)  # forward probability
             lq_2 = _log_prob_gaussian(x2, x1, stddev * hmean2)  # reverse probability
@@ -535,20 +527,14 @@ class MCMCSampler:
                 x1[:, : self.config.natom * 3],
                 x1[:, self.config.natom * 3 :],
             )
-            x2_atom = x1_atom + atom_stddev * jax.random.normal(
-                subkey, shape=x1_atom.shape
-            )  # proposal
-            x2_elec = x1_elec + elec_stddev * jax.random.normal(
-                subkey, shape=x1_elec.shape
-            )  # proposal
+            x2_atom = x1_atom + atom_stddev * jax.random.normal(subkey, shape=x1_atom.shape)  # proposal
+            x2_elec = x1_elec + elec_stddev * jax.random.normal(subkey, shape=x1_elec.shape)  # proposal
             x2 = jnp.hstack((x2_atom, x2_elec))
             x2, _ = distance.enforce_pbc(self.config.latvec, x2)
             lp_2 = 2.0 * f(params, x2)  # log prob of proposal
             ratio = lp_2 - state.logprob
         else:
-            raise NotImplementedError(
-                "Joint mcmc asymmetric moves are not implemented yet"
-            )
+            raise NotImplementedError("Joint mcmc asymmetric moves are not implemented yet")
 
         x_new, key, lp_new, num_accepts = MetropolisHastings.accept(
             x1, x2, state.logprob, lp_2, ratio, key, state.num_accepts
@@ -582,17 +568,13 @@ class MCMCSampler:
                 lp_2 = 2.0 * f(params, x2)  # log prob of proposal
                 ratio = lp_2 - state.logprob
             else:
-                x2_elec = x1_elec + stddev * jax.random.normal(
-                    subkey, shape=x1_elec.shape, dtype=x1_elec.dtype
-                )
+                x2_elec = x1_elec + stddev * jax.random.normal(subkey, shape=x1_elec.shape, dtype=x1_elec.dtype)
                 x2_elec, _ = distance.enforce_pbc(self.config.latvec, x2_elec)
                 x2 = jnp.hstack((x1_atom, x2_elec))
                 lp_2 = 2.0 * f(params, x2)  # log prob of proposal
                 ratio = lp_2 - state.logprob
         else:  # asymmetric proposal, stddev propto harmonic mean of nuclear distances
-            raise NotImplementedError(
-                "Gibbs moves for asymmetric systems are not implemented yet"
-            )
+            raise NotImplementedError("Gibbs moves for asymmetric systems are not implemented yet")
 
         x_new, key, lp_new, num_accepts = MetropolisHastings.accept(
             x1, x2, state.logprob, lp_2, ratio, key, state.num_accepts
@@ -639,9 +621,7 @@ class MCMCStepFactory:
     """Factory class for creating MCMC step functions."""
 
     @staticmethod
-    def create_step(
-        config: MCMCConfig, batch_mcmc_network: Callable, step_type: str = "standard"
-    ) -> Callable:
+    def create_step(config: MCMCConfig, batch_mcmc_network: Callable, step_type: str = "standard") -> Callable:
         """Create an MCMC step function.
 
         Args:
@@ -657,31 +637,21 @@ class MCMCStepFactory:
 
         if step_type == "electron_only":
             logger.info("Using electron only sampling")
-            return MCMCStepFactory._create_electron_only_step(
-                sampler, batch_mcmc_network, config
-            )
+            return MCMCStepFactory._create_electron_only_step(sampler, batch_mcmc_network, config)
         elif step_type == "joint":
             logger.info("Using joint sampling")
-            return MCMCStepFactory._create_joint_step(
-                sampler, batch_mcmc_network, config
-            )
+            return MCMCStepFactory._create_joint_step(sampler, batch_mcmc_network, config)
         elif step_type == "gibbs":
             logger.info("Using Gibbs sampling")
-            return MCMCStepFactory._create_gibbs_step(
-                sampler, batch_mcmc_network, config
-            )
+            return MCMCStepFactory._create_gibbs_step(sampler, batch_mcmc_network, config)
         elif step_type == "annealing":
             logger.info("Using annealing sampling")
-            return MCMCStepFactory._create_annealing_step(
-                sampler, batch_mcmc_network, config
-            )
+            return MCMCStepFactory._create_annealing_step(sampler, batch_mcmc_network, config)
         else:
             raise ValueError(f"Unknown MCMC step type: {step_type}")
 
     @staticmethod
-    def _create_electron_only_step(
-        sampler: MCMCSampler, batch_mcmc_network: Callable, config: MCMCConfig
-    ) -> Callable:
+    def _create_electron_only_step(sampler: MCMCSampler, batch_mcmc_network: Callable, config: MCMCConfig) -> Callable:
         """Create electron MCMC step function."""
         if config.importance_sampling is not None:
             logger.info("Using importance sampling")
@@ -696,9 +666,7 @@ class MCMCStepFactory:
             sampler_func = sampler.metropolis_step
 
         @jax.jit
-        def mcmc_step(
-            params: Any, data: Array, key: chex.PRNGKey, width: Any
-        ) -> tuple[Array, Array]:
+        def mcmc_step(params: Any, data: Array, key: chex.PRNGKey, width: Any) -> tuple[Array, Array]:
             """Perform standard MCMC step.
 
             Args:
@@ -719,38 +687,28 @@ class MCMCStepFactory:
                 num_accepts=0,
             )
 
-            def step_fn(
-                i: int, state: MCMCState
-            ) -> Callable[[Any, Any, MCMCState, float, bool | None], MCMCState]:
+            def step_fn(i: int, state: MCMCState) -> Callable[[Any, Any, MCMCState, float, bool | None], MCMCState]:
                 return sampler_func(params, func, state, width)
 
             final_state = jax.lax.fori_loop(0, config.steps, step_fn, state)
-            pmove = jnp.sum(final_state.num_accepts) / (
-                config.steps * config.batch_per_device
-            )
+            pmove = jnp.sum(final_state.num_accepts) / (config.steps * config.batch_per_device)
             pmove = constants.pmean(pmove)
             return final_state.data, [pmove]
 
         return mcmc_step
 
     @staticmethod
-    def _create_joint_step(
-        sampler: MCMCSampler, batch_mcmc_network: Callable, config: MCMCConfig
-    ) -> Callable:
+    def _create_joint_step(sampler: MCMCSampler, batch_mcmc_network: Callable, config: MCMCConfig) -> Callable:
         """Create joint MCMC step function."""
         if config.importance_sampling is not None:
-            raise NotImplementedError(
-                "Importance sampling for joint moves is not implemented yet"
-            )
+            raise NotImplementedError("Importance sampling for joint moves is not implemented yet")
         else:
             func = batch_mcmc_network
             logger.info("Using Metropolis sampling")
             sampler_func = sampler.metropolis_step_joint
 
         @jax.jit
-        def mcmc_step(
-            params: Any, data: Array, key: chex.PRNGKey, width: tuple[float, float]
-        ) -> tuple[Array, Array]:
+        def mcmc_step(params: Any, data: Array, key: chex.PRNGKey, width: tuple[float, float]) -> tuple[Array, Array]:
             """Perform joint MCMC step."""
             state = MCMCState(
                 data=data,
@@ -763,32 +721,24 @@ class MCMCStepFactory:
                 return sampler_func(params, func, state, width)
 
             final_state = jax.lax.fori_loop(0, config.steps, step_fn, state)
-            pmove = jnp.sum(final_state.num_accepts) / (
-                config.steps * config.batch_per_device
-            )
+            pmove = jnp.sum(final_state.num_accepts) / (config.steps * config.batch_per_device)
             pmove = constants.pmean(pmove)
             return final_state.data, pmove
 
         return mcmc_step
 
     @staticmethod
-    def _create_gibbs_step(
-        sampler: MCMCSampler, batch_mcmc_network: Callable, config: MCMCConfig
-    ) -> Callable:
+    def _create_gibbs_step(sampler: MCMCSampler, batch_mcmc_network: Callable, config: MCMCConfig) -> Callable:
         """Create Gibbs sampling step function."""
         if config.importance_sampling is not None:
-            raise NotImplementedError(
-                "Importance sampling for Gibbs moves is not implemented yet"
-            )
+            raise NotImplementedError("Importance sampling for Gibbs moves is not implemented yet")
         else:
             func = batch_mcmc_network
             logger.info("Using Metropolis sampling")
             sampler_func = sampler.metropolis_step_gibbs
 
         @jax.jit
-        def mcmc_step(
-            params: Any, data: Array, key: chex.PRNGKey, width: tuple[float, float]
-        ) -> tuple[Array, Array]:
+        def mcmc_step(params: Any, data: Array, key: chex.PRNGKey, width: tuple[float, float]) -> tuple[Array, Array]:
             atom_width, elec_width = width
             state_atom = MCMCState(
                 data=data,
@@ -809,21 +759,15 @@ class MCMCStepFactory:
             def atom_step_fn(i: int, state: MCMCState) -> MCMCState:
                 return sampler_func(params, func, state, atom_width, update_atom=True)
 
-            def sample_fn(
-                i: int, state_atom: MCMCState, state_elec: MCMCState
-            ) -> tuple[MCMCState, MCMCState]:
-                state_atom = jax.lax.fori_loop(
-                    0, config.steps, atom_step_fn, state_atom
-                )
+            def sample_fn(i: int, state_atom: MCMCState, state_elec: MCMCState) -> tuple[MCMCState, MCMCState]:
+                state_atom = jax.lax.fori_loop(0, config.steps, atom_step_fn, state_atom)
                 state_elec = MCMCState(
                     data=state_atom.data,
                     key=state_atom.key,
                     logprob=state_atom.logprob,
                     num_accepts=state_elec.num_accepts,
                 )
-                state_elec = jax.lax.fori_loop(
-                    0, config.steps, elec_step_fn, state_elec
-                )
+                state_elec = jax.lax.fori_loop(0, config.steps, elec_step_fn, state_elec)
                 state_atom = MCMCState(
                     data=state_elec.data,
                     key=state_elec.key,
@@ -852,9 +796,7 @@ class MCMCStepFactory:
         return mcmc_step
 
     @staticmethod
-    def _create_annealing_step(
-        sampler: MCMCSampler, calculate_gibbs: Callable, config: MCMCConfig
-    ) -> Callable:
+    def _create_annealing_step(sampler: MCMCSampler, calculate_gibbs: Callable, config: MCMCConfig) -> Callable:
         """Create annealing MCMC step function."""
         sampler_func = sampler.metropolis_step_cell
 
@@ -905,9 +847,7 @@ class MCMCStepFactory:
                     config.current_temp,
                 )
 
-            final_state: AnnealingState = jax.lax.fori_loop(
-                0, config.annealing_steps, step_fn, state
-            )
+            final_state: AnnealingState = jax.lax.fori_loop(0, config.annealing_steps, step_fn, state)
             pmove = jnp.sum(final_state.num_accepts) / config.annealing_steps
             pmove = constants.pmean(pmove)
             return (

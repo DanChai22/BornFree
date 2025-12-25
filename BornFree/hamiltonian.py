@@ -118,9 +118,7 @@ class BaseLocalEnergy:
         """
         if self.mode == "for":
             return self.local_kinetic_energy_real_imag(f)
-        elif self.mode == "hessian" and hasattr(
-            self, "local_kinetic_energy_real_imag_hessian"
-        ):
+        elif self.mode == "hessian" and hasattr(self, "local_kinetic_energy_real_imag_hessian"):
             return self.local_kinetic_energy_real_imag_hessian(f)
         elif self.mode == "partition":
             return self.local_kinetic_energy_partition(f)
@@ -196,9 +194,7 @@ class LocalEnergy(BaseLocalEnergy):
     and memory usage.
     """
 
-    def __init__(
-        self, simulation_cell, mode="for", partition_number=3, nuclear_treatment="fixed"
-    ):
+    def __init__(self, simulation_cell, mode="for", partition_number=3, nuclear_treatment="fixed"):
         """Initializes the LocalEnergy calculator.
 
         Args:
@@ -228,23 +224,13 @@ class LocalEnergy(BaseLocalEnergy):
         def _lapl_over_f(params, x):
             ne = x.shape[-1]
             eye = jnp.eye(ne)
-            grad_f_real_closure, grad_f_imag_closure = self._make_gradient_closures(
-                f, params
-            )
+            grad_f_real_closure, grad_f_imag_closure = self._make_gradient_closures(f, params)
 
             def _body_fun(i, val):
-                primal_real, tangent_real = jax.jvp(
-                    grad_f_real_closure, (x,), (eye[i],)
-                )
-                primal_imag, tangent_imag = jax.jvp(
-                    grad_f_imag_closure, (x,), (eye[i],)
-                )
-                kine_real = (
-                    val[0] + tangent_real[i] + primal_real[i] ** 2 - primal_imag[i] ** 2
-                )
-                kine_imag = (
-                    val[1] + tangent_imag[i] + 2 * primal_real[i] * primal_imag[i]
-                )
+                primal_real, tangent_real = jax.jvp(grad_f_real_closure, (x,), (eye[i],))
+                primal_imag, tangent_imag = jax.jvp(grad_f_imag_closure, (x,), (eye[i],))
+                kine_real = val[0] + tangent_real[i] + primal_real[i] ** 2 - primal_imag[i] ** 2
+                kine_imag = val[1] + tangent_imag[i] + 2 * primal_real[i] * primal_imag[i]
                 return [kine_real, kine_imag]
 
             result = jax.lax.fori_loop(0, ne, _body_fun, [0.0, 0.0])
@@ -332,9 +318,7 @@ class LocalEnergy(BaseLocalEnergy):
         def _lapl_over_f(params, x):
             n = x.shape[0]
             eye = jnp.eye(n)
-            grad_f_closure_real, grad_f_closure_imag = self._make_gradient_closures(
-                f, params
-            )
+            grad_f_closure_real, grad_f_closure_imag = self._make_gradient_closures(f, params)
 
             eyes = jnp.asarray(jnp.array_split(eye, self.partition_number))
 
@@ -347,14 +331,8 @@ class LocalEnergy(BaseLocalEnergy):
             primal = [primal.reshape((-1, primal.shape[-1])) for primal in plist]
             tangent = [tangent.reshape((-1, tangent.shape[-1])) for tangent in tlist]
 
-            real_kinetic = (
-                jnp.trace(tangent[0])
-                + jnp.trace(primal[0] ** 2).sum()
-                - jnp.trace(primal[1] ** 2).sum()
-            )
-            imag_kinetic = (
-                jnp.trace(tangent[1]) + jnp.trace(2 * primal[0] * primal[1]).sum()
-            )
+            real_kinetic = jnp.trace(tangent[0]) + jnp.trace(primal[0] ** 2).sum() - jnp.trace(primal[1] ** 2).sum()
+            imag_kinetic = jnp.trace(tangent[1]) + jnp.trace(2 * primal[0] * primal[1]).sum()
             return [-0.5 * real_kinetic, -0.5 * 1j * imag_kinetic]
 
         return _lapl_over_f
@@ -414,9 +392,7 @@ class BaseQuantumKineticEnergy(BaseLocalEnergy):
     methods to handle different ensemble-specific metrics.
     """
 
-    def __init__(
-        self, simulation_cell, mode="for", is_deuterium=False, partition_number=3
-    ):
+    def __init__(self, simulation_cell, mode="for", is_deuterium=False, partition_number=3):
         """Initialize the quantum kinetic energy calculator.
 
         Args:
@@ -486,12 +462,8 @@ class BaseQuantumKineticEnergy(BaseLocalEnergy):
 
         def _compute_cross_kinetic(params, x):
             eye, inv_j = self._get_coordinate_transform_matrices(params, x)
-            grad_f1_real_closure, grad_f1_imag_closure = self._make_gradient_closures(
-                f1, params
-            )
-            grad_f2_real_closure, grad_f2_imag_closure = self._make_gradient_closures(
-                f2, params
-            )
+            grad_f1_real_closure, grad_f1_imag_closure = self._make_gradient_closures(f1, params)
+            grad_f2_real_closure, grad_f2_imag_closure = self._make_gradient_closures(f2, params)
 
             def _body_fun(i, val):
                 primal_real1, _ = jax.jvp(grad_f1_real_closure, (x,), (eye[i],))
@@ -507,35 +479,23 @@ class BaseQuantumKineticEnergy(BaseLocalEnergy):
 
                 kine_real = (
                     val[0]
-                    + (
-                        primal_real1[i] * primal_real2[i]
-                        - primal_imag1[i] * primal_imag2[i]
-                    )
-                    / self.mass_array[i]
+                    + (primal_real1[i] * primal_real2[i] - primal_imag1[i] * primal_imag2[i]) / self.mass_array[i]
                 )
                 kine_imag = (
                     val[1]
-                    + (
-                        primal_real1[i] * primal_imag2[i]
-                        + primal_real2[i] * primal_imag1[i]
-                    )
-                    / self.mass_array[i]
+                    + (primal_real1[i] * primal_imag2[i] + primal_real2[i] * primal_imag1[i]) / self.mass_array[i]
                 )
                 return [kine_real, kine_imag]
 
             n_dims = x.shape[-1]
             if particle == "elec":
-                result = jax.lax.fori_loop(
-                    self.natom * 3, n_dims, _body_fun, [0.0, 0.0]
-                )
+                result = jax.lax.fori_loop(self.natom * 3, n_dims, _body_fun, [0.0, 0.0])
                 return self._format_kinetic_result(result[0], result[1], factor=1.0)
             elif particle == "atom":
                 result = jax.lax.fori_loop(0, self.natom * 3, _body_fun, [0.0, 0.0])
                 return self._format_kinetic_result(result[0], result[1], factor=1.0)
             else:
-                raise ValueError(
-                    f"Unrecognized particle type: {particle}. Must be 'elec' or 'atom'."
-                )
+                raise ValueError(f"Unrecognized particle type: {particle}. Must be 'elec' or 'atom'.")
 
         return _compute_cross_kinetic
 
@@ -552,32 +512,18 @@ class BaseQuantumKineticEnergy(BaseLocalEnergy):
 
         def _compute_atomic_laplacian(params, x):
             eye, inv_j = self._get_coordinate_transform_matrices(params, x)
-            grad_f_real_closure, grad_f_imag_closure = self._make_gradient_closures(
-                f, params
-            )
+            grad_f_real_closure, grad_f_imag_closure = self._make_gradient_closures(f, params)
 
             def _body_fun(i, val):
-                primal_real, tangent_real = jax.jvp(
-                    grad_f_real_closure, (x,), (eye[i],)
-                )
-                primal_imag, tangent_imag = jax.jvp(
-                    grad_f_imag_closure, (x,), (eye[i],)
-                )
+                primal_real, tangent_real = jax.jvp(grad_f_real_closure, (x,), (eye[i],))
+                primal_imag, tangent_imag = jax.jvp(grad_f_imag_closure, (x,), (eye[i],))
 
                 # Apply coordinate transformation
                 primal_real = self._transform_gradient(primal_real, inv_j)
                 primal_imag = self._transform_gradient(primal_imag, inv_j)
 
-                kine_real = (
-                    val[0]
-                    + (tangent_real[i] + primal_real[i] ** 2 - primal_imag[i] ** 2)
-                    / self.mass_array[i]
-                )
-                kine_imag = (
-                    val[1]
-                    + (tangent_imag[i] + 2 * primal_real[i] * primal_imag[i])
-                    / self.mass_array[i]
-                )
+                kine_real = val[0] + (tangent_real[i] + primal_real[i] ** 2 - primal_imag[i] ** 2) / self.mass_array[i]
+                kine_imag = val[1] + (tangent_imag[i] + 2 * primal_real[i] * primal_imag[i]) / self.mass_array[i]
                 return [kine_real, kine_imag]
 
             result = jax.lax.fori_loop(0, self.natom * 3, _body_fun, [0.0, 0.0])
@@ -601,32 +547,18 @@ class BaseQuantumKineticEnergy(BaseLocalEnergy):
 
         def _compute_laplacian(params, x):
             eye, inv_j = self._get_coordinate_transform_matrices(params, x)
-            grad_f_real_closure, grad_f_imag_closure = self._make_gradient_closures(
-                f, params
-            )
+            grad_f_real_closure, grad_f_imag_closure = self._make_gradient_closures(f, params)
 
             def _body_fun(i, val):
-                primal_real, tangent_real = jax.jvp(
-                    grad_f_real_closure, (x,), (eye[i],)
-                )
-                primal_imag, tangent_imag = jax.jvp(
-                    grad_f_imag_closure, (x,), (eye[i],)
-                )
+                primal_real, tangent_real = jax.jvp(grad_f_real_closure, (x,), (eye[i],))
+                primal_imag, tangent_imag = jax.jvp(grad_f_imag_closure, (x,), (eye[i],))
 
                 # Apply coordinate transformation
                 primal_real = self._transform_gradient(primal_real, inv_j)
                 primal_imag = self._transform_gradient(primal_imag, inv_j)
 
-                kine_real = (
-                    val[0]
-                    + (tangent_real[i] + primal_real[i] ** 2 - primal_imag[i] ** 2)
-                    / self.mass_array[i]
-                )
-                kine_imag = (
-                    val[1]
-                    + (tangent_imag[i] + 2 * primal_real[i] * primal_imag[i])
-                    / self.mass_array[i]
-                )
+                kine_real = val[0] + (tangent_real[i] + primal_real[i] ** 2 - primal_imag[i] ** 2) / self.mass_array[i]
+                kine_imag = val[1] + (tangent_imag[i] + 2 * primal_real[i] * primal_imag[i]) / self.mass_array[i]
                 return [kine_real, kine_imag]
 
             n_dims = x.shape[-1]
@@ -652,9 +584,7 @@ class BaseQuantumKineticEnergy(BaseLocalEnergy):
 
         def _compute_laplacian_partitioned(params, x):
             eye, inv_j = self._get_coordinate_transform_matrices(params, x)
-            grad_f_closure_real, grad_f_closure_imag = self._make_gradient_closures(
-                f, params
-            )
+            grad_f_closure_real, grad_f_closure_imag = self._make_gradient_closures(f, params)
 
             eyes = jnp.asarray(jnp.array_split(eye, self.partition_number))
 
@@ -667,10 +597,7 @@ class BaseQuantumKineticEnergy(BaseLocalEnergy):
 
             # Apply coordinate transformation if needed
             if inv_j is not None:
-                primal = [
-                    jnp.matmul(primal.reshape((-1, primal.shape[-1])), inv_j)
-                    for primal in plist
-                ]
+                primal = [jnp.matmul(primal.reshape((-1, primal.shape[-1])), inv_j) for primal in plist]
             else:
                 primal = [primal.reshape((-1, primal.shape[-1])) for primal in plist]
 
@@ -682,8 +609,7 @@ class BaseQuantumKineticEnergy(BaseLocalEnergy):
                 - jnp.trace(primal[1] ** 2 / self.mass_array).sum()
             )
             imag_kinetic = (
-                jnp.trace(tangent[1] / self.mass_array)
-                + jnp.trace(2 * primal[0] * primal[1] / self.mass_array).sum()
+                jnp.trace(tangent[1] / self.mass_array) + jnp.trace(2 * primal[0] * primal[1] / self.mass_array).sum()
             )
             return [-0.5 * real_kinetic, -0.5 * 1j * imag_kinetic]
 
@@ -746,9 +672,7 @@ class LocalEnergy_quantum(BaseQuantumKineticEnergy):
     treated quantum mechanically with fixed cell parameters (NVT ensemble).
     """
 
-    def __init__(
-        self, simulation_cell, mode="for", is_deuterium=False, partition_number=3
-    ):
+    def __init__(self, simulation_cell, mode="for", is_deuterium=False, partition_number=3):
         """Initialize the local energy function for quantum nuclei in NVT ensemble.
 
         Args:
@@ -797,9 +721,7 @@ class LocalEnergy_quantum(BaseQuantumKineticEnergy):
 
         def _compute_folx_laplacian(params, x):
             ne = x.shape[-1]
-            eyes = jnp.eye(ne, dtype=x.dtype) / jnp.sqrt(
-                self.mass_array.reshape([-1, 1])
-            )
+            eyes = jnp.eye(ne, dtype=x.dtype) / jnp.sqrt(self.mass_array.reshape([-1, 1]))
 
             def func(flat_x):
                 return f(params, flat_x)
@@ -941,9 +863,9 @@ class LocalEnthalpy_quantum(BaseQuantumKineticEnergy):
 
         def _compute_folx_laplacian(params, x):
             ne = x.shape[-1] // 3
-            eye = jnp.kron(
-                jnp.eye(ne, dtype=x.dtype), self.get_inv_j(params["cell"]).T
-            ) / jnp.sqrt(self.mass_array.reshape([-1, 1]))
+            eye = jnp.kron(jnp.eye(ne, dtype=x.dtype), self.get_inv_j(params["cell"]).T) / jnp.sqrt(
+                self.mass_array.reshape([-1, 1])
+            )
 
             def func(flat_x):
                 return f(params, flat_x)
@@ -965,9 +887,7 @@ class LocalEnthalpy_quantum(BaseQuantumKineticEnergy):
         ewald = ewaldsum.EwaldSum_npt_quantum(self.simulation_cell, self.lattice_config)
 
         def _compute_ewald_energy_with_pv(cellpar, x):
-            r, jac = network_block.convert_to_simulation_cell(
-                cellpar, x, self.lattice_config
-            )
+            r, jac = network_block.convert_to_simulation_cell(cellpar, x, self.lattice_config)
             ee, ei, ii = ewald.energy(cellpar, r)
             pv = gpa2habohr3(self.target_pressure) * jnp.linalg.det(jac)
             return ee, ei, ii, pv
@@ -1047,9 +967,7 @@ def make_BO_kin(
     else:
         raise ValueError(f"Unsupported ensemble: {ensemble}. Use 'NVT' or 'NPT'.")
 
-    el_fun = el_class.local_energy_atom_kinetic_diff(
-        total_network, atom_network, elec_network
-    )
+    el_fun = el_class.local_energy_atom_kinetic_diff(total_network, atom_network, elec_network)
     batch_local_energy = jax.vmap(el_fun, in_axes=(None, 0), out_axes=0)
 
     @constants.pmap

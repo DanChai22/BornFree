@@ -60,9 +60,7 @@ def create_training_step(mcmc_step, optimizer_step, reset_if_nan=False):
         new_params, new_state, loss, aux_data = optimizer_step(params, data, state)
 
         if reset_if_nan:
-            new_params = jax.lax.cond(
-                jnp.isnan(loss), lambda: params, lambda: new_params
-            )
+            new_params = jax.lax.cond(jnp.isnan(loss), lambda: params, lambda: new_params)
             new_state = jax.lax.cond(jnp.isnan(loss), lambda: state, lambda: new_state)
         pmove = [jnp.mean(p) for p in pmove]
 
@@ -93,9 +91,7 @@ def create_annealing_step(mcmc_step):
     ):
         # MCMC loop
         mcmc_key, _ = jax.random.split(key, num=2)
-        new_params, pmove, loss, aux_data = mcmc_step(
-            params, data, mcmc_key, mcmc_width, cell_annealing_width
-        )
+        new_params, pmove, loss, aux_data = mcmc_step(params, data, mcmc_key, mcmc_width, cell_annealing_width)
         pmove = [constants.pmean(jnp.mean(p)) for p in pmove]
 
         return data, new_params, state, loss, aux_data, pmove
@@ -103,9 +99,7 @@ def create_annealing_step(mcmc_step):
     return step
 
 
-def create_kfac_training_step(
-    mcmc_step, damping: float, optimizer: kfac_jax.Optimizer, reset_if_nan: bool = False
-):
+def create_kfac_training_step(mcmc_step, damping: float, optimizer: kfac_jax.Optimizer, reset_if_nan: bool = False):
     """Factory to create training step for KFAC optimizers.
 
     Args:
@@ -122,17 +116,11 @@ def create_kfac_training_step(
 
     """
     mcmc_step = constants.pmap(mcmc_step)
-    shared_mom = kfac_jax.utils.replicate_all_local_devices(
-        jnp.zeros([], dtype=jnp.float32)
-    )
-    shared_damping = kfac_jax.utils.replicate_all_local_devices(
-        jnp.asarray(damping, dtype=jnp.float32)
-    )
+    shared_mom = kfac_jax.utils.replicate_all_local_devices(jnp.zeros([], dtype=jnp.float32))
+    shared_damping = kfac_jax.utils.replicate_all_local_devices(jnp.asarray(damping, dtype=jnp.float32))
     # Due to some KFAC cleverness related to donated buffers, need to do this
     # to make state resettable
-    copy_tree = constants.pmap(
-        functools.partial(jax.tree_util.tree_map, lambda x: (1.0 * x).astype(x.dtype))
-    )
+    copy_tree = constants.pmap(functools.partial(jax.tree_util.tree_map, lambda x: (1.0 * x).astype(x.dtype)))
 
     def step(
         data,
@@ -200,9 +188,7 @@ def create_training_step_npt(mcmc_step, optimizer_step, reset_if_nan=False):
         new_params, new_state, loss, aux_data = optimizer_step(params, data, state)
 
         if reset_if_nan:
-            new_params = jax.lax.cond(
-                jnp.isnan(loss), lambda: params, lambda: new_params
-            )
+            new_params = jax.lax.cond(jnp.isnan(loss), lambda: params, lambda: new_params)
             new_state = jax.lax.cond(jnp.isnan(loss), lambda: state, lambda: new_state)
         pmove = [jnp.mean(p) for p in pmove]
 
@@ -211,9 +197,7 @@ def create_training_step_npt(mcmc_step, optimizer_step, reset_if_nan=False):
     return step
 
 
-def create_kfac_training_step_npt(
-    mcmc_step, damping: float, optimizer: kfac_jax.Optimizer, reset_if_nan: bool = False
-):
+def create_kfac_training_step_npt(mcmc_step, damping: float, optimizer: kfac_jax.Optimizer, reset_if_nan: bool = False):
     """Factory to create training step for KFAC optimizers in NPT ensemble.
 
     Args:
@@ -230,17 +214,11 @@ def create_kfac_training_step_npt(
 
     """
     mcmc_step = constants.pmap(mcmc_step)
-    shared_mom = kfac_jax.utils.replicate_all_local_devices(
-        jnp.zeros([], dtype=jnp.float32)
-    )
-    shared_damping = kfac_jax.utils.replicate_all_local_devices(
-        jnp.asarray(damping, dtype=jnp.float32)
-    )
+    shared_mom = kfac_jax.utils.replicate_all_local_devices(jnp.zeros([], dtype=jnp.float32))
+    shared_damping = kfac_jax.utils.replicate_all_local_devices(jnp.asarray(damping, dtype=jnp.float32))
     # Due to some KFAC cleverness related to donated buffers, need to do this
     # to make state resettable
-    copy_tree = constants.pmap(
-        functools.partial(jax.tree_util.tree_map, lambda x: (1.0 * x).astype(x.dtype))
-    )
+    copy_tree = constants.pmap(functools.partial(jax.tree_util.tree_map, lambda x: (1.0 * x).astype(x.dtype)))
 
     def step(
         data,
@@ -351,9 +329,7 @@ def determine_training_phase_and_step(
             if phase == "Warmup":
                 optimizer_step_fn = wavefunction_step_fn
             elif phase == "Geo Opt":
-                current_temp = annealing_utils.temperature_schedule(
-                    t - cfg.strategy.warmup_steps, cfg.mcmc.annealing
-                )
+                current_temp = annealing_utils.temperature_schedule(t - cfg.strategy.warmup_steps, cfg.mcmc.annealing)
                 annealing_mcmc_step = annealing_utils.setup_annealing_mcmc_step(
                     cfg,
                     evaluate_loss,

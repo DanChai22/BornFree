@@ -55,18 +55,14 @@ def process(cfg: base_config.BornFreeConfig):
     Args:
         cfg: Configuration object containing all simulation parameters
     """
-    host_batch_size, device_batch_size, data_shape, precision, key = (
-        initialization_utils.setup_basic_components(cfg)
-    )
+    host_batch_size, device_batch_size, data_shape, precision, key = initialization_utils.setup_basic_components(cfg)
     simulation_cell: PyscfCell = cfg.system.pyscf_cell
     unit_cell = supercell.get_supercell(
         supercell.convert_simulation_cell_to_unit_cell(simulation_cell),
         np.diag([1, 1, 1]),
     )
     unit_cell = initialization_utils.convert_cell_dtype(unit_cell, precision)
-    simulation_cell = initialization_utils.convert_cell_dtype(
-        simulation_cell, precision
-    )
+    simulation_cell = initialization_utils.convert_cell_dtype(simulation_cell, precision)
     internal_cell = init_guess.pyscf_to_cell(cell=unit_cell)
     klist = supercell.get_klist(cell=unit_cell, twist=jnp.array(cfg.network.twist))
 
@@ -77,9 +73,7 @@ def process(cfg: base_config.BornFreeConfig):
         "lattice_mode": cfg.crystal.lattice.mode,
     }
 
-    networks, batched_networks, params, key = network_utils.setup_networks_and_params(
-        cfg, system_dict, key, precision
-    )
+    networks, batched_networks, params, key = network_utils.setup_networks_and_params(cfg, system_dict, key, precision)
 
     # Checkpointing setup
     ckpt_save_path, ckpt_restore_filename = checkpoint.setup_checkpoint_and_config(cfg)
@@ -101,9 +95,7 @@ def process(cfg: base_config.BornFreeConfig):
             logger.info("Found Wandb Run ID %s in checkpoint.", run_id_to_resume)
         else:
             run_id_to_resume = None
-            logger.warning(
-                "No Wandb Run ID found in checkpoint. A new run will be created."
-            )
+            logger.warning("No Wandb Run ID found in checkpoint. A new run will be created.")
     else:
         logger.info("No checkpoint found. Training new model.")
         key, subkey = jax.random.split(key)
@@ -131,9 +123,7 @@ def process(cfg: base_config.BornFreeConfig):
     sharded_key = kfac_jax.utils.make_different_rng_key_on_all_devices(key)
 
     logger.info("create mcmc functions")
-    mcmc_step = mcmc_utils.setup_mcmc_step(
-        cfg, batched_networks, device_batch_size, unit_cell, precision
-    )
+    mcmc_step = mcmc_utils.setup_mcmc_step(cfg, batched_networks, device_batch_size, unit_cell, precision)
     local_sampling_step = annealing_utils.setup_local_sampling_step(
         cfg, batched_networks, device_batch_size, unit_cell, precision
     )
@@ -145,21 +135,15 @@ def process(cfg: base_config.BornFreeConfig):
     )
 
     def learning_rate_schedule(t):
-        return cfg.optim.lr.rate * jnp.power(
-            (1.0 / (1.0 + (t / cfg.optim.lr.delay))), cfg.optim.lr.decay
-        )
+        return cfg.optim.lr.rate * jnp.power((1.0 / (1.0 + (t / cfg.optim.lr.delay))), cfg.optim.lr.decay)
 
     atom_mcmc_width, elec_mcmc_width = mcmc_utils.init_mcmc_width(
         cfg, precision, atom_mcmc_width_ckpt, elec_mcmc_width_ckpt
     )
-    cell_annealing_width = annealing_utils.init_cell_annealing_width(
-        cfg, precision, cell_annealing_width_ckpt
-    )
+    cell_annealing_width = annealing_utils.init_cell_annealing_width(cfg, precision, cell_annealing_width_ckpt)
     pmoves = mcmc_utils.init_pmoves(cfg, precision)
 
-    mcmc_width = mcmc_utils.get_mcmc_width(
-        atom_mcmc_width, elec_mcmc_width, cfg.nuclear_treatment
-    )
+    mcmc_width = mcmc_utils.get_mcmc_width(atom_mcmc_width, elec_mcmc_width, cfg.nuclear_treatment)
 
     burn_in_step = training_step_utils.create_training_step_npt(
         mcmc_step=mcmc_step, optimizer_step=optimizer_utils.null_update
@@ -274,10 +258,8 @@ def process(cfg: base_config.BornFreeConfig):
                 pmove = [p[0] for p in pmove]
             else:
                 # Adapt MCMC move width
-                atom_mcmc_width, elec_mcmc_width, mcmc_width, pmoves = (
-                    mcmc_utils.update_mcmc_width_if_needed(
-                        t, cfg, atom_mcmc_width, elec_mcmc_width, pmoves
-                    )
+                atom_mcmc_width, elec_mcmc_width, mcmc_width, pmoves = mcmc_utils.update_mcmc_width_if_needed(
+                    t, cfg, atom_mcmc_width, elec_mcmc_width, pmoves
                 )
 
                 if cfg.optim.optimizer in ["none", "adam", "muon"]:
@@ -286,9 +268,7 @@ def process(cfg: base_config.BornFreeConfig):
                 pmoves[:, t % cfg.mcmc.adapt_frequency] = pmove
 
             # Extract and scale metrics
-            metrics = logging_utils.extract_and_scale_metrics(
-                loss, aux_data, simulation_cell.scale
-            )
+            metrics = logging_utils.extract_and_scale_metrics(loss, aux_data, simulation_cell.scale)
 
             if jax.process_index() == 0:
                 if t % cfg.log.stats_frequency == 0 and metrics["loss"] is not None:
@@ -314,10 +294,7 @@ def process(cfg: base_config.BornFreeConfig):
                             if cfg.crystal.lattice.mode == "angle"
                             else ["a", "b", "c"]
                         )
-                        cell_metrics = {
-                            f"cell/{param_names[i]}": cell_params[i]
-                            for i in range(len(param_names))
-                        }
+                        cell_metrics = {f"cell/{param_names[i]}": cell_params[i] for i in range(len(param_names))}
                         wandb.log(cell_metrics, step=t)
 
                 if checkpoint.should_save_checkpoint(t, cfg, time_of_last_ckpt):
@@ -343,13 +320,9 @@ def process(cfg: base_config.BornFreeConfig):
 
                     time_of_last_ckpt = time.time()
 
-        writers.clean_csv(
-            ckpt_save_path, cfg.log.stats_file_name, train_schema
-        ) if jax.process_index() == 0 else None
+        writers.clean_csv(ckpt_save_path, cfg.log.stats_file_name, train_schema) if jax.process_index() == 0 else None
         if cfg.nuclear_treatment == "quantum":
-            logging_utils.log_bo_energy(
-                cfg, networks, simulation_cell, ckpt_save_path, params, data
-            )
+            logging_utils.log_bo_energy(cfg, networks, simulation_cell, ckpt_save_path, params, data)
 
         # Close wandb at the end of training
         wandb.finish()

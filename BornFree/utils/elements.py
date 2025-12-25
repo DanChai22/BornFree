@@ -79,9 +79,7 @@ class Element:
         if self.group in unpaired:
             return unpaired[self.group]
         else:
-            raise NotImplementedError(
-                "Spin configuration for transition metals not set."
-            )
+            raise NotImplementedError("Spin configuration for transition metals not set.")
 
     @property
     def nalpha(self) -> int:

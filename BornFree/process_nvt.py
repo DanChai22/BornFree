@@ -56,22 +56,16 @@ def process(cfg: base_config.BornFreeConfig) -> None:
 
     """
     # Basic setup
-    host_batch_size, device_batch_size, data_shape, precision, key = (
-        initialization_utils.setup_basic_components(cfg)
-    )
+    host_batch_size, device_batch_size, data_shape, precision, key = initialization_utils.setup_basic_components(cfg)
 
     # Initialization
-    simulation_cell, internal_cell, hartree_fock = (
-        initialization_utils.initialize_simulation(cfg, precision)
-    )
+    simulation_cell, internal_cell, hartree_fock = initialization_utils.initialize_simulation(cfg, precision)
 
     system_dict = {
         "klist": hartree_fock.klist,
         "simulation_cell": simulation_cell,
     }
-    networks, batched_networks, params, key = network_utils.setup_networks_and_params(
-        cfg, system_dict, key, precision
-    )
+    networks, batched_networks, params, key = network_utils.setup_networks_and_params(cfg, system_dict, key, precision)
 
     # Checkpointing setup
     ckpt_save_path, ckpt_restore_filename = checkpoint.setup_checkpoint_and_config(cfg)
@@ -91,9 +85,7 @@ def process(cfg: base_config.BornFreeConfig) -> None:
         if run_id_to_resume:
             logger.info("Found Wandb Run ID %s in checkpoint.", run_id_to_resume)
         else:
-            logger.warning(
-                "No Wandb Run ID found in checkpoint. A new run will be created."
-            )
+            logger.warning("No Wandb Run ID found in checkpoint. A new run will be created.")
     else:
         logger.info("No checkpoint found. Training new model.")
         key, subkey = jax.random.split(key)
@@ -120,17 +112,11 @@ def process(cfg: base_config.BornFreeConfig) -> None:
 
     # Set up MCMC, loss, and optimization
     logger.info("create mcmc functions")
-    mcmc_step = mcmc_utils.setup_mcmc_step(
-        cfg, batched_networks, device_batch_size, simulation_cell, precision
-    )
-    evaluate_loss = setup_evaluate_loss(
-        cfg, networks, batched_networks, simulation_cell
-    )
+    mcmc_step = mcmc_utils.setup_mcmc_step(cfg, batched_networks, device_batch_size, simulation_cell, precision)
+    evaluate_loss = setup_evaluate_loss(cfg, networks, batched_networks, simulation_cell)
 
     def learning_rate_schedule(t):
-        return cfg.optim.lr.rate * jnp.power(
-            (1.0 / (1.0 + (t / cfg.optim.lr.delay))), cfg.optim.lr.decay
-        )
+        return cfg.optim.lr.rate * jnp.power((1.0 / (1.0 + (t / cfg.optim.lr.delay))), cfg.optim.lr.decay)
 
     opt_state, step = optimizer_utils.init_opt_state_and_step(
         cfg,
@@ -148,9 +134,7 @@ def process(cfg: base_config.BornFreeConfig) -> None:
         cfg, precision, atom_mcmc_width_ckpt, elec_mcmc_width_ckpt
     )
     pmoves = mcmc_utils.init_pmoves(cfg, precision)
-    mcmc_width = mcmc_utils.get_mcmc_width(
-        atom_mcmc_width, elec_mcmc_width, cfg.nuclear_treatment
-    )
+    mcmc_width = mcmc_utils.get_mcmc_width(atom_mcmc_width, elec_mcmc_width, cfg.nuclear_treatment)
 
     # MCMC burn-in
     if t_init == 0:
@@ -160,9 +144,7 @@ def process(cfg: base_config.BornFreeConfig) -> None:
         )
         for _ in range(cfg.mcmc.burn_in):
             sharded_key, subkeys = kfac_jax.utils.p_split(sharded_key)
-            data, params, *_ = burn_in_step(
-                data, params, state=None, key=subkeys, mcmc_width=mcmc_width
-            )
+            data, params, *_ = burn_in_step(data, params, state=None, key=subkeys, mcmc_width=mcmc_width)
         logger.info("Completed MCMC burn-in.")
 
     time_of_last_ckpt = time.time()
@@ -201,15 +183,11 @@ def process(cfg: base_config.BornFreeConfig) -> None:
     ) as writer:
         for t in range(t_init, cfg.optim.iterations):
             sharded_key, subkeys = kfac_jax.utils.p_split(sharded_key)
-            data, params, opt_state, loss, aux_data, pmove = step(
-                data, params, opt_state, subkeys, mcmc_width
-            )
+            data, params, opt_state, loss, aux_data, pmove = step(data, params, opt_state, subkeys, mcmc_width)
 
             # Adapt MCMC move width
-            atom_mcmc_width, elec_mcmc_width, mcmc_width, pmoves = (
-                mcmc_utils.update_mcmc_width_if_needed(
-                    t, cfg, atom_mcmc_width, elec_mcmc_width, pmoves
-                )
+            atom_mcmc_width, elec_mcmc_width, mcmc_width, pmoves = mcmc_utils.update_mcmc_width_if_needed(
+                t, cfg, atom_mcmc_width, elec_mcmc_width, pmoves
             )
 
             if cfg.optim.optimizer in ["none", "adam", "muon"]:
@@ -217,9 +195,7 @@ def process(cfg: base_config.BornFreeConfig) -> None:
             pmoves[:, t % cfg.mcmc.adapt_frequency] = pmove
 
             # Extract and scale metrics
-            metrics = logging_utils.extract_and_scale_metrics(
-                loss, aux_data, simulation_cell.scale
-            )
+            metrics = logging_utils.extract_and_scale_metrics(loss, aux_data, simulation_cell.scale)
 
             # Log and save checkpoint
             if jax.process_index() == 0:
@@ -248,19 +224,13 @@ def process(cfg: base_config.BornFreeConfig) -> None:
                         run_id_to_resume,
                     )
                     if cfg.nuclear_treatment == "quantum":
-                        visualize.plot_nvt_quantum_result(
-                            data, t, cfg, metrics["kinetic"], metrics["ewald"]
-                        )
+                        visualize.plot_nvt_quantum_result(data, t, cfg, metrics["kinetic"], metrics["ewald"])
                     time_of_last_ckpt = time.time()
 
-        writers.clean_csv(
-            ckpt_save_path, cfg.log.stats_file_name, train_schema
-        ) if jax.process_index() == 0 else None
+        writers.clean_csv(ckpt_save_path, cfg.log.stats_file_name, train_schema) if jax.process_index() == 0 else None
 
         # Final calculations
         if cfg.nuclear_treatment == "quantum":
-            logging_utils.log_bo_energy(
-                cfg, networks, simulation_cell, ckpt_save_path, params, data
-            )
+            logging_utils.log_bo_energy(cfg, networks, simulation_cell, ckpt_save_path, params, data)
 
         wandb.finish()

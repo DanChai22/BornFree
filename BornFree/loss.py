@@ -122,9 +122,7 @@ def clip_local_energy_func(diff, clip_local_energy, clip_type="complex"):
         return clipped_real + 1j * clipped_imag
 
     else:
-        raise ValueError(
-            f"Unrecognized clip type: '{clip_type}'. Must be 'complex' or 'real'."
-        )
+        raise ValueError(f"Unrecognized clip type: '{clip_type}'. Must be 'complex' or 'real'.")
 
 
 def create_frozen_mask(params_pytree, *keys_to_freeze):
@@ -146,9 +144,7 @@ def create_frozen_mask(params_pytree, *keys_to_freeze):
 
     """
     # Create initial mask: True for all JAX arrays, False otherwise
-    trainable_mask = jax.tree_util.tree_map(
-        lambda x: isinstance(x, Array), params_pytree
-    )
+    trainable_mask = jax.tree_util.tree_map(lambda x: isinstance(x, Array), params_pytree)
 
     # If no keys to freeze or not a dict, return the default mask
     if not keys_to_freeze or not isinstance(params_pytree, dict):
@@ -159,9 +155,7 @@ def create_frozen_mask(params_pytree, *keys_to_freeze):
     for key in keys_to_freeze:
         if key in frozen_mask:
             # Recursively set all values under this key to False
-            frozen_mask[key] = jax.tree_util.tree_map(
-                lambda _: False, params_pytree[key]
-            )
+            frozen_mask[key] = jax.tree_util.tree_map(lambda _: False, params_pytree[key])
         else:
             logger.warning(
                 "Key '%s' not found in params PyTree. Available keys: %s",
@@ -172,9 +166,7 @@ def create_frozen_mask(params_pytree, *keys_to_freeze):
     return frozen_mask
 
 
-def _compute_loss_and_aux(
-    local_energy_components: tuple, include_pv: bool = False
-) -> tuple[Array, AuxiliaryLossData]:
+def _compute_loss_and_aux(local_energy_components: tuple, include_pv: bool = False) -> tuple[Array, AuxiliaryLossData]:
     """Compute loss and auxiliary data from local energy components.
 
     Shared logic between NVT and NPT ensembles for computing the final loss
@@ -204,9 +196,7 @@ def _compute_loss_and_aux(
 
     # Compute loss and variance across devices
     pmean_loss = constants.pmean(mean_local_energy)
-    variance = constants.pmean(
-        jnp.mean(jnp.abs(local_energy) ** 2) - jnp.abs(mean_local_energy.real) ** 2
-    )
+    variance = constants.pmean(jnp.mean(jnp.abs(local_energy) ** 2) - jnp.abs(mean_local_energy.real) ** 2)
     loss = pmean_loss.real
 
     aux_data = AuxiliaryLossData(
@@ -310,10 +300,7 @@ def make_loss_nvt(
             nuclear_treatment=nuclear_treatment,
         )
     else:
-        raise ValueError(
-            f"Unknown nuclear_treatment: '{nuclear_treatment}'. "
-            f"Must be 'quantum' or 'fixed'."
-        )
+        raise ValueError(f"Unknown nuclear_treatment: '{nuclear_treatment}'. Must be 'quantum' or 'fixed'.")
 
     el_fun = el_class.local_energy_separate(network)
     batch_local_energy = jax.vmap(el_fun, in_axes=(None, 0), out_axes=0)
@@ -358,9 +345,7 @@ def make_loss_nvt(
         clip_diff = clip_local_energy_func(diff, clip_local_energy, clip_type)
 
         # Compute gradient using shared JVP logic
-        tangents_dot = _compute_jvp_gradient(
-            batch_network, primals, tangents, clip_diff
-        )
+        tangents_dot = _compute_jvp_gradient(batch_network, primals, tangents, clip_diff)
 
         return (loss, aux_data), (tangents_dot, aux_data)
 
@@ -470,9 +455,7 @@ def make_loss_npt(
 
         # Freeze cell parameters to prevent unstable lattice updates
         frozen_mask = create_frozen_mask(params_tangent, "cell")
-        masked_params_tangent = jax.tree_util.tree_map(
-            operator.mul, params_tangent, frozen_mask
-        )
+        masked_params_tangent = jax.tree_util.tree_map(operator.mul, params_tangent, frozen_mask)
         masked_tangent = (masked_params_tangent, data_tangent)
 
         # Compute loss and clipped energy differences
@@ -480,9 +463,7 @@ def make_loss_npt(
         diff = aux_data.local_energy - loss
         clip_diff = clip_local_energy_func(diff, clip_local_energy, clip_type)
 
-        tangents_dot = 2.0 * _compute_jvp_gradient(
-            batch_network, primals, masked_tangent, clip_diff
-        )
+        tangents_dot = 2.0 * _compute_jvp_gradient(batch_network, primals, masked_tangent, clip_diff)
 
         return (loss, aux_data), (tangents_dot, aux_data)
 

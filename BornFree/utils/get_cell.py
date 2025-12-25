@@ -125,9 +125,7 @@ class SimulationCellGenerator:
         except Exception as e:
             raise OSError(f"Error reading CIF file {cif_path}: {e}")
 
-        return read_cif.make_cell(
-            ase_cell, rs, self.ncopy, self.basis, self.gen_k, self.identity
-        )
+        return read_cif.make_cell(ase_cell, rs, self.ncopy, self.basis, self.gen_k, self.identity)
 
     def get_cell(
         self,
@@ -232,9 +230,7 @@ class SimulationCellGenerator:
         symbols = [cell.atom_pure_symbol(i) for i in range(cell.natm)]
         positions = cell.atom_coords()  # Returns atomic positions in Bohr
         lattice_vectors = cell.lattice_vectors()  # Returns lattice vectors in Bohr
-        ase_cell = Atoms(
-            symbols=symbols, positions=positions, cell=lattice_vectors, pbc=True
-        )
+        ase_cell = Atoms(symbols=symbols, positions=positions, cell=lattice_vectors, pbc=True)
         if is_view:
             view(ase_cell, viewer="x3d")
         return ase_cell

@@ -60,9 +60,7 @@ def init_electrons(
         if len(cell) == 1:
             atomic_spin_configs = [electrons]
         else:
-            raise NotImplementedError(
-                "No initialization policy yet exists for charged molecules."
-            )
+            raise NotImplementedError("No initialization policy yet exists for charged molecules.")
     else:
         key, subkey = jax.random.split(key)
         np.random.seed(int(subkey[0]))
@@ -88,16 +86,12 @@ def init_electrons(
     for i in range(2):
         for j in range(len(cell)):
             atom_position = jnp.asarray(cell[j].coords)
-            electron_positions.append(
-                jnp.tile(atom_position, atomic_spin_configs[j][i])
-            )
+            electron_positions.append(jnp.tile(atom_position, atomic_spin_configs[j][i]))
     electron_positions = jnp.concatenate(electron_positions)
     # Create a batch of configurations with a Gaussian distribution about each
     # atom.
     key, subkey = jax.random.split(key)
-    guess = electron_positions + init_width * jax.random.normal(
-        subkey, shape=(batch_size, electron_positions.size)
-    )
+    guess = electron_positions + init_width * jax.random.normal(subkey, shape=(batch_size, electron_positions.size))
     replaced_guess, _ = distance.enforce_pbc(latvec, guess)
     return replaced_guess
 
@@ -127,9 +121,7 @@ def init_atom(
     atom_positions = [jnp.asarray(atom.coords) for atom in cell]
     atom_positions = jnp.concatenate(atom_positions)
     key, subkey = jax.random.split(key)
-    guess = atom_positions + init_width * jax.random.normal(
-        subkey, shape=(batch_size, atom_positions.size)
-    )
+    guess = atom_positions + init_width * jax.random.normal(subkey, shape=(batch_size, atom_positions.size))
     replaced_guess, _ = distance.enforce_pbc(latvec, guess)
     return replaced_guess
 

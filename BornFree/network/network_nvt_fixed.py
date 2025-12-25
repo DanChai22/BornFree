@@ -130,16 +130,11 @@ def solid_fermi_net_orbitals(
     h_to_orbitals = network_block.elec_forward(h_one, h_two, params, spins)
 
     active_spin_channels = [spin for spin in spins if spin > 0]  # shape (nalpha, nbeta)
-    orbitals = [
-        network_block.linear_layer(h, **p)
-        for h, p in zip(h_to_orbitals, params["orbital"])
-    ]
+    orbitals = [network_block.linear_layer(h, **p) for h, p in zip(h_to_orbitals, params["orbital"])]
 
     for i in range(len(active_spin_channels)):
         nparams = params["orbital"][i]["w"].shape[-1] // 2
-        orbitals[i] = (
-            orbitals[i][..., :nparams] + 1j * orbitals[i][..., nparams:]
-        )  # shape (nalpha, nparams)
+        orbitals[i] = orbitals[i][..., :nparams] + 1j * orbitals[i][..., nparams:]  # shape (nalpha, nparams)
 
     if envelope_type in ["isotropic", "diagonal", "full"]:
         orbitals = [
@@ -156,12 +151,8 @@ def solid_fermi_net_orbitals(
         for spin, orbital in zip(active_spin_channels, orbitals)
         if spin > 0
     ]  # shape (nalpha, ndet, nalpha)
-    orbitals = [
-        jnp.transpose(orbital, (1, 0, 2)) for orbital in orbitals
-    ]  # shape (ndet, nalpha, nalpha)
-    phases = network_block.eval_phase(
-        x, klist=klist, ndim=3, spins=spins, full_det=full_det
-    )
+    orbitals = [jnp.transpose(orbital, (1, 0, 2)) for orbital in orbitals]  # shape (ndet, nalpha, nalpha)
+    phases = network_block.eval_phase(x, klist=klist, ndim=3, spins=spins, full_det=full_det)
 
     orbitals = [orb * p[None, :, :] for orb, p in zip(orbitals, phases)]
     if full_det:

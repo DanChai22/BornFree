@@ -94,9 +94,7 @@ def init_solid_fermi_net_params(
         determinants,
         distance_type,
     )
-    atom_params, key = network_block._init_atom_params(
-        key, unit_cell, distance_type, hidden_dims, rs, ensemble="NPT"
-    )
+    atom_params, key = network_block._init_atom_params(key, unit_cell, distance_type, hidden_dims, rs, ensemble="NPT")
     params = {**elec_params, **atom_params, **cell_params}
     return params
 
@@ -159,13 +157,9 @@ def solid_fermi_net_atom_features(
     assert predicted_dist.shape == target_residual_distance.shape
 
     if is_rezero:
-        final_distances_for_envelope = network_block.rezero(
-            predicted_dist, target_residual_distance, params
-        )
+        final_distances_for_envelope = network_block.rezero(predicted_dist, target_residual_distance, params)
     else:
-        final_distances_for_envelope = network_block.residual(
-            predicted_dist, target_residual_distance
-        )
+        final_distances_for_envelope = network_block.residual(predicted_dist, target_residual_distance)
     envelope_func = network_block.get_atom_wave_function(
         atom_center_dynamic=atom_center_dynamic,
     )
@@ -213,16 +207,12 @@ def solid_fermi_net_electron_orbitals(
 
     """
     if atom_center_dynamic:
-        ae_, ee_, _, r_ae, r_ee, _ = (
-            network_block.construct_periodic_input_features_npt_quantum(
-                x, simulation_cell=simulation_cell, distance_type=distance_type
-            )
+        ae_, ee_, _, r_ae, r_ee, _ = network_block.construct_periodic_input_features_npt_quantum(
+            x, simulation_cell=simulation_cell, distance_type=distance_type
         )
     else:
-        ae_, ee_, _, r_ae, r_ee, _ = (
-            network_block.construct_periodic_input_features_fixed_npt_quantum(
-                x, simulation_cell=simulation_cell, distance_type=distance_type
-            )
+        ae_, ee_, _, r_ae, r_ee, _ = network_block.construct_periodic_input_features_fixed_npt_quantum(
+            x, simulation_cell=simulation_cell, distance_type=distance_type
         )
 
     natom = simulation_cell.natm
@@ -245,10 +235,7 @@ def solid_fermi_net_electron_orbitals(
     h_to_orbitals = network_block.elec_forward(h_one, h_two, params, spins)
 
     active_spin_channels = [spin for spin in spins if spin > 0]
-    orbitals = [
-        network_block.linear_layer(h, **p)
-        for h, p in zip(h_to_orbitals, params["orbital"])
-    ]
+    orbitals = [network_block.linear_layer(h, **p) for h, p in zip(h_to_orbitals, params["orbital"])]
 
     for i in range(len(active_spin_channels)):
         nparams = params["orbital"][i]["w"].shape[-1] // 2
@@ -269,9 +256,7 @@ def solid_fermi_net_electron_orbitals(
         if spin > 0
     ]
     orbitals = [jnp.transpose(orbital, (1, 0, 2)) for orbital in orbitals]
-    phases = network_block.eval_phase(
-        elec_coord, klist=klist, ndim=3, spins=spins, full_det=full_det
-    )
+    phases = network_block.eval_phase(elec_coord, klist=klist, ndim=3, spins=spins, full_det=full_det)
 
     orbitals = [orb * p[None, :, :] for orb, p in zip(orbitals, phases)]
     if full_det:

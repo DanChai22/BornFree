@@ -147,9 +147,7 @@ def init_opt_state_and_step(
             optax.scale(-1.0),
         )
     elif optimizer_name == "muon":
-        optimizer = optax.contrib.muon(
-            learning_rate_schedule, **dataclasses.asdict(cfg.optim.muon)
-        )
+        optimizer = optax.contrib.muon(learning_rate_schedule, **dataclasses.asdict(cfg.optim.muon))
     elif optimizer_name == "kfac":
         # Differentiate wrt parameters (argument 0)
         val_and_grad = jax.value_and_grad(evaluate_loss, argnums=0, has_aux=True)
@@ -179,18 +177,12 @@ def init_opt_state_and_step(
 
     if not optimizer:
         opt_state = None
-        step = make_training_step(
-            mcmc_step=mcmc_step, optimizer_step=make_loss_step(evaluate_loss)
-        )
+        step = make_training_step(mcmc_step=mcmc_step, optimizer_step=make_loss_step(evaluate_loss))
     elif isinstance(optimizer, optax.GradientTransformation):
         # optax/optax-compatible optimizer (ADAM, LAMB, MUON, ...)
         optimizer = optax.MultiSteps(optimizer, every_k_schedule=cfg.optim.ministeps)
         opt_state = jax.pmap(optimizer.init)(params)
-        opt_state = (
-            opt_state
-            if opt_state_ckpt is None
-            else optax._src.wrappers.MultiStepsState(*opt_state)
-        )
+        opt_state = opt_state if opt_state_ckpt is None else optax._src.wrappers.MultiStepsState(*opt_state)
         step = make_training_step(
             mcmc_step=mcmc_step,
             optimizer_step=make_opt_update_step(evaluate_loss, optimizer),

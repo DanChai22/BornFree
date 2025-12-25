@@ -117,9 +117,7 @@ class Writer(contextlib.AbstractContextManager):
         self._file.close()
 
 
-def clean_csv(
-    ckpt_save_path: str, name: str, train_schema: list[str] | None = None
-) -> pd.DataFrame:
+def clean_csv(ckpt_save_path: str, name: str, train_schema: list[str] | None = None) -> pd.DataFrame:
     """Clean a CSV file by removing duplicates and fixing headers.
 
     Args:
@@ -360,11 +358,7 @@ def load_yaml_to_config(base_folder: str, keys: list) -> ml_collections.ConfigDi
         yaml_config = yaml_config.__dict__
     elif isinstance(yaml_config, dict) and "__BornFreeConfig__" in yaml_config:
         # Handle case where yaml contains BornFreeConfig type information
-        yaml_config = {
-            key: value
-            for key, value in yaml_config.items()
-            if key != "__BornFreeConfig__"
-        }
+        yaml_config = {key: value for key, value in yaml_config.items() if key != "__BornFreeConfig__"}
 
     return dict_to_mlcollections({key: yaml_config.get(key) for key in keys})
 
@@ -447,18 +441,12 @@ def update_multiple_keys_from_yaml(
     except yaml.YAMLError as e:
         print(f"ERROR: Could not parse YAML file '{yaml_path}': {e}")
         raise
-    except (
-        Exception
-    ) as e:  # Catch other potential errors (e.g., module not found for tags)
-        print(
-            f"ERROR: An unexpected error occurred while loading YAML '{yaml_path}': {e}"
-        )
+    except Exception as e:  # Catch other potential errors (e.g., module not found for tags)
+        print(f"ERROR: An unexpected error occurred while loading YAML '{yaml_path}': {e}")
         raise
 
     if not loaded_object_from_yaml:
-        print(
-            f"WARNING: YAML file '{yaml_path}' is empty or parsed to None. No updates will be performed."
-        )
+        print(f"WARNING: YAML file '{yaml_path}' is empty or parsed to None. No updates will be performed.")
         return base_cfg
 
     was_locked = base_cfg.is_locked
@@ -475,22 +463,18 @@ def update_multiple_keys_from_yaml(
             try:
                 for i, key_segment in enumerate(key_segments):
                     path_so_far = ".".join(key_segments[: i + 1])
-                    if dataclasses.is_dataclass(
-                        current_part_from_yaml
-                    ) and not isinstance(current_part_from_yaml, type):
+                    if dataclasses.is_dataclass(current_part_from_yaml) and not isinstance(
+                        current_part_from_yaml, type
+                    ):
                         if not hasattr(current_part_from_yaml, key_segment):
                             raise AttributeError(
                                 f"Field '{key_segment}' (path: '{path_so_far}') not found in "
                                 f"dataclass {type(current_part_from_yaml)}."
                             )
-                        current_part_from_yaml = getattr(
-                            current_part_from_yaml, key_segment
-                        )
+                        current_part_from_yaml = getattr(current_part_from_yaml, key_segment)
                     elif isinstance(current_part_from_yaml, dict):
                         if key_segment not in current_part_from_yaml:
-                            raise KeyError(
-                                f"Key '{key_segment}' (path: '{path_so_far}') not found in dict."
-                            )
+                            raise KeyError(f"Key '{key_segment}' (path: '{path_so_far}') not found in dict.")
                         current_part_from_yaml = current_part_from_yaml[key_segment]
                     else:
                         raise ValueError(
@@ -499,9 +483,7 @@ def update_multiple_keys_from_yaml(
                         )
                 source_for_update_value = current_part_from_yaml
             except (AttributeError, KeyError, ValueError) as e:
-                print(
-                    f"WARNING: Could not extract data for key '{target_key}' from YAML: {e}. Skipping this key."
-                )
+                print(f"WARNING: Could not extract data for key '{target_key}' from YAML: {e}. Skipping this key.")
                 continue  # Move to the next key in target_keys_list
 
             # 2. Convert extracted data to a ConfigDict-friendly payload
@@ -510,17 +492,13 @@ def update_multiple_keys_from_yaml(
             # 3. Update base_cfg at the current target_key
             cfg_ptr = base_cfg
             try:
-                for i, k_segment in enumerate(
-                    key_segments[:-1]
-                ):  # Navigate to parent in base_cfg
+                for i, k_segment in enumerate(key_segments[:-1]):  # Navigate to parent in base_cfg
                     path_so_far_cfg = ".".join(key_segments[: i + 1])
                     if k_segment not in cfg_ptr:
                         cfg_ptr[k_segment] = ml_collections.ConfigDict()
                     elif not isinstance(cfg_ptr[k_segment], ml_collections.ConfigDict):
                         if isinstance(cfg_ptr[k_segment], dict):
-                            cfg_ptr[k_segment] = ml_collections.ConfigDict(
-                                cfg_ptr[k_segment]
-                            )
+                            cfg_ptr[k_segment] = ml_collections.ConfigDict(cfg_ptr[k_segment])
                         else:
                             print(
                                 f"WARNING: Overwriting non-ConfigDict/dict at '{path_so_far_cfg}' "
@@ -532,18 +510,14 @@ def update_multiple_keys_from_yaml(
                 final_key_segment = key_segments[-1]
                 if (
                     final_key_segment in cfg_ptr
-                    and isinstance(
-                        cfg_ptr.get(final_key_segment), ml_collections.ConfigDict
-                    )
+                    and isinstance(cfg_ptr.get(final_key_segment), ml_collections.ConfigDict)
                     and isinstance(update_payload, dict)
                 ):
                     cfg_ptr[final_key_segment].update(update_payload)
                 else:
                     cfg_ptr[final_key_segment] = update_payload
             except Exception as e:
-                print(
-                    f"WARNING: Failed to update base_cfg for key '{target_key}': {e}. Skipping this key."
-                )
+                print(f"WARNING: Failed to update base_cfg for key '{target_key}': {e}. Skipping this key.")
                 continue  # Move to the next key
 
     finally:

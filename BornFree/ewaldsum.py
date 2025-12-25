@@ -53,9 +53,7 @@ def get_lattice_displacements(latvec: Array) -> Array:
     """
     u = jnp.asarray([-1, 0, 1])
     unit_box = jnp.stack([x.ravel() for x in jnp.meshgrid(*[u] * 3, indexing="ij")]).T
-    unit_box = unit_box + 1e-10 * jax.random.uniform(
-        jax.random.PRNGKey(0), shape=unit_box.shape
-    )
+    unit_box = unit_box + 1e-10 * jax.random.uniform(jax.random.PRNGKey(0), shape=unit_box.shape)
     return jnp.asarray(jnp.dot(unit_box, latvec))
 
 
@@ -80,13 +78,9 @@ def calculate_ion_ion_real(
         ii_real = 0
     else:
         ion_distances = dist.dist_matrix(atoms_pos)
-        rvec = (
-            ion_distances[None, :, :, :] + displacements[:, None, None, :]
-        )  # rvec shape (n unit cell, nion, nion, 3)
+        rvec = ion_distances[None, :, :, :] + displacements[:, None, None, :]  # rvec shape (n unit cell, nion, nion, 3)
         r = jnp.linalg.norm(rvec, axis=-1)  # r shape (n unit cell, nion, nion)
-        charge_ij = (
-            atom_charges[..., None] * atom_charges[None, ...]
-        )  # charge_ij shape (nion, nion)
+        charge_ij = atom_charges[..., None] * atom_charges[None, ...]  # charge_ij shape (nion, nion)
         ii_real = jnp.sum(jnp.triu(charge_ij * jax.lax.erfc(alpha * r) / r, k=1))
     return ii_real
 
@@ -191,9 +185,7 @@ def calculate_reciprocal(
     return ee_recip, ei_recip, ii_recip
 
 
-def calculate_constants(
-    atom_charges: Array, alpha: float, omega: float, nelec: int
-) -> tuple[float, float, float]:
+def calculate_constants(atom_charges: Array, alpha: float, omega: float, nelec: int) -> tuple[float, float, float]:
     """Calculate constant correction terms for Ewald summation.
 
     Args:
@@ -239,9 +231,7 @@ def select_big(gpts: Array, recvec: Array, alpha: float) -> tuple[Array, Array]:
     return gpoints[bigweight], gweight[bigweight]
 
 
-def calculate_gpoints_and_weights(
-    gpts: Array, recvec: Array, alpha: float
-) -> tuple[Array, Array]:
+def calculate_gpoints_and_weights(gpts: Array, recvec: Array, alpha: float) -> tuple[Array, Array]:
     """Calculate G-points and weights without filtering.
 
     Args:
@@ -343,15 +333,8 @@ class EwaldSum_nvt_fixed:
             jnp.arange(-ewald_gmax, ewald_gmax + 1),
             indexing="ij",
         )
-        gptsX0Y0Zpos = jnp.meshgrid(
-            zero, zero, jnp.arange(1, ewald_gmax + 1), indexing="ij"
-        )
-        gs = zip(
-            *[
-                select_big(x, recvec, self.alpha)
-                for x in (gptsXpos, gptsX0Ypos, gptsX0Y0Zpos)
-            ]
-        )
+        gptsX0Y0Zpos = jnp.meshgrid(zero, zero, jnp.arange(1, ewald_gmax + 1), indexing="ij")
+        gs = zip(*[select_big(x, recvec, self.alpha) for x in (gptsXpos, gptsX0Ypos, gptsX0Y0Zpos)])
         self.gpoints, self.gweight = [jnp.concatenate(x, axis=0) for x in gs]
 
     def energy(self, configs: Array) -> tuple[float, float, float]:
@@ -364,9 +347,7 @@ class EwaldSum_nvt_fixed:
             Tuple of (ee, ei, ii) energies in Hartree.
 
         """
-        ee_real = calculate_electron_electron_real(
-            configs, self.dist, self.alpha, self.nelec, self.displacements
-        )
+        ee_real = calculate_electron_electron_real(configs, self.dist, self.alpha, self.nelec, self.displacements)
         ei_real = calculate_ion_electron_real(
             self.atom_coords,
             configs,
@@ -392,9 +373,7 @@ class EwaldSum_nvt_fixed:
             self.gweight,
             self.omega,
         )
-        ii_const, ei_const, ee_const = calculate_constants(
-            self.atom_charges, self.alpha, self.omega, self.nelec
-        )
+        ii_const, ei_const, ee_const = calculate_constants(self.atom_charges, self.alpha, self.omega, self.nelec)
         ee = ee_real + ee_recip + ee_const
         ei = ei_real + ei_recip + ei_const
         ii = ii_real + ii_recip + ii_const
@@ -428,9 +407,7 @@ class EwaldSum_nvt_quantum(EwaldSum_nvt_fixed):
         """
         elec_pos = configs[self.natom * 3 :]
         atom_pos = configs[: self.natom * 3]
-        ee_real = calculate_electron_electron_real(
-            elec_pos, self.dist, self.alpha, self.nelec, self.displacements
-        )
+        ee_real = calculate_electron_electron_real(elec_pos, self.dist, self.alpha, self.nelec, self.displacements)
         ei_real = calculate_ion_electron_real(
             atom_pos,
             elec_pos,
@@ -439,9 +416,7 @@ class EwaldSum_nvt_quantum(EwaldSum_nvt_fixed):
             self.alpha,
             self.displacements,
         )
-        ii_real = calculate_ion_ion_real(
-            atom_pos, self.atom_charges, self.dist, self.alpha, self.displacements
-        )
+        ii_real = calculate_ion_ion_real(atom_pos, self.atom_charges, self.dist, self.alpha, self.displacements)
         ee_recip, ei_recip, ii_recip = calculate_reciprocal(
             elec_pos,
             atom_pos,
@@ -452,9 +427,7 @@ class EwaldSum_nvt_quantum(EwaldSum_nvt_fixed):
             self.gweight,
             self.omega,
         )
-        ii_const, ei_const, ee_const = calculate_constants(
-            self.atom_charges, self.alpha, self.omega, self.nelec
-        )
+        ii_const, ei_const, ee_const = calculate_constants(self.atom_charges, self.alpha, self.omega, self.nelec)
         ee = ee_real + ee_recip + ee_const
         ei = ei_real + ei_recip + ei_const
         ii = ii_real + ii_recip + ii_const
@@ -511,9 +484,7 @@ class EwaldSum_npt_quantum(EwaldSum_nvt_quantum):
             jnp.arange(-ewald_gmax, ewald_gmax + 1),
             indexing="ij",
         )
-        self.gptsX0Y0Zpos = jnp.meshgrid(
-            zero, zero, jnp.arange(1, ewald_gmax + 1), indexing="ij"
-        )
+        self.gptsX0Y0Zpos = jnp.meshgrid(zero, zero, jnp.arange(1, ewald_gmax + 1), indexing="ij")
 
     def get_gpts_and_weights(self, alpha: float, recvec: Array) -> tuple[Array, Array]:
         """Convert G-point indices to vectors and compute weights.
@@ -526,12 +497,9 @@ class EwaldSum_npt_quantum(EwaldSum_nvt_quantum):
             Tuple of (gpoints, gweight).
 
         """
-        gs = zip(
-            *[
-                calculate_gpoints_and_weights(x, recvec, alpha)
-                for x in (self.gptsXpos, self.gptsX0Ypos, self.gptsX0Y0Zpos)
-            ]
-        )
+        gs = zip(*[
+            calculate_gpoints_and_weights(x, recvec, alpha) for x in (self.gptsXpos, self.gptsX0Ypos, self.gptsX0Y0Zpos)
+        ])
         return [jnp.concatenate(x, axis=0) for x in gs]
 
     def energy(self, cellpar: Array, configs: Array) -> tuple[Array, Array, Array]:
@@ -550,23 +518,15 @@ class EwaldSum_npt_quantum(EwaldSum_nvt_quantum):
         dist = distance.MinimalImageDistance_Dynamic(latvec)
         displacements = get_lattice_displacements(latvec)
         omega = jnp.linalg.det(latvec)
-        recvec = jnp.linalg.inv(
-            latvec
-        ).T  # 2 pi smaller compared to the pyscf.reciprocal_vectors()
+        recvec = jnp.linalg.inv(latvec).T  # 2 pi smaller compared to the pyscf.reciprocal_vectors()
         smallestheight = jnp.amin(1 / jnp.linalg.norm(recvec, axis=1))
         alpha = 5.0 / smallestheight
         gpoints, gweight = self.get_gpts_and_weights(alpha, recvec)
         elec_pos = configs[self.natom * 3 :]
         atom_pos = configs[: self.natom * 3]
-        ee_real = calculate_electron_electron_real(
-            elec_pos, dist, alpha, self.nelec, displacements
-        )
-        ei_real = calculate_ion_electron_real(
-            atom_pos, elec_pos, self.atom_charges, dist, alpha, displacements
-        )
-        ii_real = calculate_ion_ion_real(
-            atom_pos, self.atom_charges, dist, alpha, displacements
-        )
+        ee_real = calculate_electron_electron_real(elec_pos, dist, alpha, self.nelec, displacements)
+        ei_real = calculate_ion_electron_real(atom_pos, elec_pos, self.atom_charges, dist, alpha, displacements)
+        ii_real = calculate_ion_ion_real(atom_pos, self.atom_charges, dist, alpha, displacements)
         ee_recip, ei_recip, ii_recip = calculate_reciprocal(
             elec_pos,
             atom_pos,
@@ -577,9 +537,7 @@ class EwaldSum_npt_quantum(EwaldSum_nvt_quantum):
             gweight,
             omega,
         )
-        ii_const, ei_const, ee_const = calculate_constants(
-            self.atom_charges, alpha, omega, self.nelec
-        )
+        ii_const, ei_const, ee_const = calculate_constants(self.atom_charges, alpha, omega, self.nelec)
         ee = ee_real + ee_recip + ee_const
         ei = ei_real + ei_recip + ei_const
         ii = ii_real + ii_recip + ii_const

@@ -28,16 +28,12 @@ def make_atoms(
     """Make atom pyscf style coords."""
     lattice = _lattice_const(rs)
     atom_strs = []
-    for ii, jj, kk in itertools.product(
-        range(ncopy[0]), range(ncopy[1]), range(ncopy[2])
-    ):
+    for ii, jj, kk in itertools.product(range(ncopy[0]), range(ncopy[1]), range(ncopy[2])):
         xx = ii * lattice
         yy = jj * lattice
         zz = kk * lattice
         atom_strs += [f"H {xx} {yy} {zz}"]
-        atom_strs += [
-            f"H {xx + 0.5 * lattice} {yy + 0.5 * lattice} {zz + 0.5 * lattice}"
-        ]
+        atom_strs += [f"H {xx + 0.5 * lattice} {yy + 0.5 * lattice} {zz + 0.5 * lattice}"]
     return ";".join(atom_strs)
 
 
@@ -136,9 +132,7 @@ def get_config(input_str):
     cfg.crystal.ncopy = [int(Sx), int(Sy), int(Sz)]
     ncopy_array = np.array(cfg.crystal.ncopy)
     cell = make_cell(cfg.crystal.rs, ncopy_array)
-    kpts_class = cell.make_kpts(
-        cfg.crystal.kpts.number, with_gamma_point=False, space_group_symmetry=True
-    )
+    kpts_class = cell.make_kpts(cfg.crystal.kpts.number, with_gamma_point=False, space_group_symmetry=True)
     twist_list = kpts_class.kpts_scaled_ibz
     cfg.crystal.kpts.length = len(twist_list)
     cfg.crystal.kpts.weights = kpts_class.weights_ibz[cfg.crystal.kpts.twist_index]
@@ -172,9 +166,7 @@ def get_config(input_str):
     cfg.network.detnet.atom_center_dynamic = bool(int(atom_center_dynamic))
 
     # Configure MCMC type based on nuclear_treatment type
-    cfg.mcmc.mcmc_type = (
-        "electron_only" if cfg.nuclear_treatment == "fixed" else "gibbs"
-    )
+    cfg.mcmc.mcmc_type = "electron_only" if cfg.nuclear_treatment == "fixed" else "gibbs"
 
     # Configure optimization settings based on inference mode
     if cfg.infer:

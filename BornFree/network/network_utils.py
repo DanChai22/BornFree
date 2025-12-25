@@ -64,22 +64,14 @@ def setup_network_functions(
         elif cfg.ensemble == "NVT":
             network_module = network_nvt_quantum
         else:
-            raise ValueError(
-                f"Unsupported ensemble for quantum treatment: {cfg.ensemble}"
-            )
+            raise ValueError(f"Unsupported ensemble for quantum treatment: {cfg.ensemble}")
 
-        log_network = network_module.make_solid_fermi_net(
-            **system_dict, method_name="eval_log_network"
-        )
-        logabs_network = network_module.make_solid_fermi_net(
-            **system_dict, method_name="eval_logabs_network"
-        )
+        log_network = network_module.make_solid_fermi_net(**system_dict, method_name="eval_log_network")
+        logabs_network = network_module.make_solid_fermi_net(**system_dict, method_name="eval_logabs_network")
         electron_network = network_module.make_solid_fermi_net(
             **system_dict, method_name="eval_log_network", mcmc="electron"
         )
-        atom_network = network_module.make_solid_fermi_net(
-            **system_dict, method_name="eval_log_network", mcmc="atom"
-        )
+        atom_network = network_module.make_solid_fermi_net(**system_dict, method_name="eval_log_network", mcmc="atom")
 
         networks = {
             "log": log_network,
@@ -97,12 +89,8 @@ def setup_network_functions(
         if cfg.ensemble == "NPT":
             raise ValueError("Fixed nuclear treatment not yet supported for NPT.")
 
-        log_network = network_nvt_fixed.make_solid_fermi_net(
-            **system_dict, method_name="eval_log_network"
-        )
-        logabs_network = network_nvt_fixed.make_solid_fermi_net(
-            **system_dict, method_name="eval_logabs_network"
-        )
+        log_network = network_nvt_fixed.make_solid_fermi_net(**system_dict, method_name="eval_log_network")
+        logabs_network = network_nvt_fixed.make_solid_fermi_net(**system_dict, method_name="eval_logabs_network")
 
         networks = {
             "log": log_network,

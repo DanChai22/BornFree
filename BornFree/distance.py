@@ -64,9 +64,7 @@ class MinimalImageDistance:
         # Perform lattice type detection and optimization if requested
         if optimize:
             ortho_tol = 1e-10
-            diagonal = jnp.all(
-                jnp.abs(latvec - jnp.diag(jnp.diagonal(latvec))) < ortho_tol
-            )
+            diagonal = jnp.all(jnp.abs(latvec - jnp.diag(jnp.diagonal(latvec))) < ortho_tol)
             if diagonal:
                 self.dist_i = self.diagonal_dist_i
                 if verbose == 0:

@@ -47,9 +47,7 @@ EV_J = 1.60218e-19  # J per eV
 NPERM2_MBAR = 1e-5  # mbar per N/m^2
 
 # Pressure conversion constants
-HABOHR3_MBAR = (
-    HARTREE_EV * EV_J / (BOHR_METER**3) * NPERM2_MBAR / 1e6
-)  # mbar per Ha/Bohr^3
+HABOHR3_MBAR = HARTREE_EV * EV_J / (BOHR_METER**3) * NPERM2_MBAR / 1e6  # mbar per Ha/Bohr^3
 MBAR_HABOHR3 = 1.0 / HABOHR3_MBAR  # Ha/Bohr^3 per mbar
 GPA_MBAR = 1e-2  # mbar per GPa
 GPA_HABOHR3 = GPA_MBAR * MBAR_HABOHR3  # Ha/Bohr^3 per GPa
@@ -98,9 +96,7 @@ def kcal2hartree(x_k: NumericalLike) -> NumericalLike:
     return x_k * HARTREE_KCAL
 
 
-def pressure_estimator(
-    kinetic: float, potential: float, volume: float
-) -> tuple[float, float]:
+def pressure_estimator(kinetic: float, potential: float, volume: float) -> tuple[float, float]:
     """Calculate pressure and PV term from energy components using the virial theorem.
 
     This function computes the pressure and PV term using the quantum mechanical

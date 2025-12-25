@@ -372,174 +372,172 @@ def default() -> ml_collections.ConfigDict:
 
     """
     # wavefunction output.
-    cfg = ml_collections.ConfigDict(
-        {
-            "config_module": __name__,
-            "ensemble": "NVT",  # NVT or NPT
-            "nuclear_treatment": "fixed",  # 'quantum','fixed'
-            "precision": "float32",  # float32 or float64
-            "target_pressure": 100.0,  # target pressure in GPa
-            "batch_size": 1024,  # batch size
-            "host_batch_size": 1024,  # host batch size
-            "xrd_exp": None,  # list of xrd experimental data
-            "infer": False,  # whether to run in inference mode
-            # Config module used. Should be set in get_config function as either the
-            # absolute module or relative to the configs subdirectory. Relative
-            # imports must start with a '.' (e.g. .atom). Do *not* override on
-            # command-line. Do *not* set using __name__ from inside a get_config
-            # function, as config_flags overrides this when importing the module using
-            # importlib.import_module.
-            "use_x64": True,  # use float64 or 32
-            "strategy": {
-                "warmup_steps": 10000,
-                "opt_steps": 1000,
-                "geo_opt_steps": 100,
+    cfg = ml_collections.ConfigDict({
+        "config_module": __name__,
+        "ensemble": "NVT",  # NVT or NPT
+        "nuclear_treatment": "fixed",  # 'quantum','fixed'
+        "precision": "float32",  # float32 or float64
+        "target_pressure": 100.0,  # target pressure in GPa
+        "batch_size": 1024,  # batch size
+        "host_batch_size": 1024,  # host batch size
+        "xrd_exp": None,  # list of xrd experimental data
+        "infer": False,  # whether to run in inference mode
+        # Config module used. Should be set in get_config function as either the
+        # absolute module or relative to the configs subdirectory. Relative
+        # imports must start with a '.' (e.g. .atom). Do *not* override on
+        # command-line. Do *not* set using __name__ from inside a get_config
+        # function, as config_flags overrides this when importing the module using
+        # importlib.import_module.
+        "use_x64": True,  # use float64 or 32
+        "strategy": {
+            "warmup_steps": 10000,
+            "opt_steps": 1000,
+            "geo_opt_steps": 100,
+        },
+        "optim": {
+            "iterations": 10000,  # number of iterations
+            "optimizer": "kfac",
+            "local_energy_outlier_width": 5.0,
+            "lr": {
+                "rate": 3.0e-2,  # learning rate, different from the reported lr in FermiNet
+                "decay": 1.0,  # exponent of learning rate decay
+                "delay": 10000.0,  # term that sets the scale of the rate decay
             },
-            "optim": {
-                "iterations": 10000,  # number of iterations
-                "optimizer": "kfac",
-                "local_energy_outlier_width": 5.0,
-                "lr": {
-                    "rate": 3.0e-2,  # learning rate, different from the reported lr in FermiNet
-                    "decay": 1.0,  # exponent of learning rate decay
-                    "delay": 10000.0,  # term that sets the scale of the rate decay
-                },
-                "clip_el": 5.0,  # If not none, scale at which to clip local energy
-                "clip_type": "real",  # Clip real and imag part of gradient.
-                "reset_if_nan": False,
-                # ADAM hyperparameters. See optax documentation for details.
-                "adam": {
-                    "b1": 0.9,
-                    "b2": 0.999,
-                    "eps": 1.0e-8,
-                    "eps_root": 0.0,
-                },
-                "muon": {
-                    "ns_coeffs": (3.4445, -4.7750, 2.0315),
-                    "ns_steps": 5,
-                    "beta": 0.95,
-                    "eps": 1.0e-8,
-                    "adam_b1": 0.9,
-                    "adam_b2": 0.999,
-                    "adam_eps_root": 0.0,
-                },
-                "kfac": {
-                    "invert_every": 1,
-                    "cov_update_every": 1,
-                    "damping": 0.001,
-                    "cov_ema_decay": 0.95,
-                    "momentum": 0.0,
-                    "momentum_type": "regular",
-                    # Warning: adaptive damping is not currently available.
-                    "min_damping": 1.0e-4,
-                    "norm_constraint": 0.001,
-                    "mean_center": True,
-                    "l2_reg": 0.0,
-                    "register_only_generic": False,
-                },
-                "ministeps": 1,
-                "laplacian_mode": "folx",  # 'folx', 'for', 'partition', 'hessian'
-                "partition_number": 3,
-                # Only used for 'partition' mode.
-                # partition_number must be divisivle by (dim * number of electrons).
-                # The smaller the faster, but requires more memory.
+            "clip_el": 5.0,  # If not none, scale at which to clip local energy
+            "clip_type": "real",  # Clip real and imag part of gradient.
+            "reset_if_nan": False,
+            # ADAM hyperparameters. See optax documentation for details.
+            "adam": {
+                "b1": 0.9,
+                "b2": 0.999,
+                "eps": 1.0e-8,
+                "eps_root": 0.0,
             },
-            "log": {
-                "stats_frequency": 10,  # iterations between logging of stats
-                "save_frequency": 60.0,  # minutes between saving network params
-                "save_frequency_in_step": -1,
-                "save_path": "",
-                # specify the local save path
-                "restore_path": "",
-                # specify the restore path which contained saved Model parameters.
-                "stats_file_name": "train_stats",
+            "muon": {
+                "ns_coeffs": (3.4445, -4.7750, 2.0315),
+                "ns_steps": 5,
+                "beta": 0.95,
+                "eps": 1.0e-8,
+                "adam_b1": 0.9,
+                "adam_b2": 0.999,
+                "adam_eps_root": 0.0,
             },
-            "system": {
-                "pyscf_cell": None,  # simulation cell object
-                "ndim": 3,  # dimension of the system
-                "internal_cell": None,
+            "kfac": {
+                "invert_every": 1,
+                "cov_update_every": 1,
+                "damping": 0.001,
+                "cov_ema_decay": 0.95,
+                "momentum": 0.0,
+                "momentum_type": "regular",
+                # Warning: adaptive damping is not currently available.
+                "min_damping": 1.0e-4,
+                "norm_constraint": 0.001,
+                "mean_center": True,
+                "l2_reg": 0.0,
+                "register_only_generic": False,
             },
-            "mcmc": {
-                "annealing": {
-                    "annealing_steps": 10,
-                    "annealing_type": "cauchy",
-                    "initial_temp": 0.1,
-                    "final_temp": 0.001,
-                    "beta": 0.002,
-                    "local_sampling": False,
-                    "local_steps": 10,
-                    "steps": 5,
-                    "iter": 5,
-                    "cell_annealing_width": 0.02,
-                },
-                "mcmc_type": "gibbs",  # 'joint' or 'gibbs' or 'electron_only'
-                "burn_in": 100,
-                "steps": 5,  # Number of MCMC steps to make between network updates.
-                "iter": 10,
-                "elec_init_width": 0.8,
-                "atom_init_width": 0.08,
-                "elec_move_width": 0.02,
-                "atom_move_width": 0.0002,
-                "adapt_frequency": 100,  # Number of steps after which to update the adaptive MCMC step size
-                # If true, scale the proposal width for each electron by the harmonic
-                # mean of the distance to the nuclei.
-                "importance_sampling": False,  # not tested
-                # whether to use importance sampling in MCMC step, untested yet
-                # Metropolis sampling will be used if false
-                "one_electron": False,
-                # If true, use one-electron moves, untested yet
+            "ministeps": 1,
+            "laplacian_mode": "folx",  # 'folx', 'for', 'partition', 'hessian'
+            "partition_number": 3,
+            # Only used for 'partition' mode.
+            # partition_number must be divisivle by (dim * number of electrons).
+            # The smaller the faster, but requires more memory.
+        },
+        "log": {
+            "stats_frequency": 10,  # iterations between logging of stats
+            "save_frequency": 60.0,  # minutes between saving network params
+            "save_frequency_in_step": -1,
+            "save_path": "",
+            # specify the local save path
+            "restore_path": "",
+            # specify the restore path which contained saved Model parameters.
+            "stats_file_name": "train_stats",
+        },
+        "system": {
+            "pyscf_cell": None,  # simulation cell object
+            "ndim": 3,  # dimension of the system
+            "internal_cell": None,
+        },
+        "mcmc": {
+            "annealing": {
+                "annealing_steps": 10,
+                "annealing_type": "cauchy",
+                "initial_temp": 0.1,
+                "final_temp": 0.001,
+                "beta": 0.002,
+                "local_sampling": False,
+                "local_steps": 10,
+                "steps": 5,
+                "iter": 5,
+                "cell_annealing_width": 0.02,
             },
-            "network": {
-                "detnet": {
-                    "envelope_type": "isotropic",
-                    "atom_center_dynamic": True,
-                    # only isotropic mode has been tested
-                    "is_rezero": False,
-                    "bias_orbitals": False,
-                    "use_last_layer": False,
-                    "full_det": False,
-                    "hidden_dims": ((64, 32, 32), (64, 32, 32), (64, 32, 32)),
-                    "determinants": 8,
-                    "distance_type": "tri",  # 'nu' or 'tri'
-                },
-                "twist": (
-                    0.25,
-                     0.25,
-                     0.25,
-                 ),  # Define the twist of wavefunction, twists are given in terms
-                # of fractions of supercell reciprocal vectors
+            "mcmc_type": "gibbs",  # 'joint' or 'gibbs' or 'electron_only'
+            "burn_in": 100,
+            "steps": 5,  # Number of MCMC steps to make between network updates.
+            "iter": 10,
+            "elec_init_width": 0.8,
+            "atom_init_width": 0.08,
+            "elec_move_width": 0.02,
+            "atom_move_width": 0.0002,
+            "adapt_frequency": 100,  # Number of steps after which to update the adaptive MCMC step size
+            # If true, scale the proposal width for each electron by the harmonic
+            # mean of the distance to the nuclei.
+            "importance_sampling": False,  # not tested
+            # whether to use importance sampling in MCMC step, untested yet
+            # Metropolis sampling will be used if false
+            "one_electron": False,
+            # If true, use one-electron moves, untested yet
+        },
+        "network": {
+            "detnet": {
+                "envelope_type": "isotropic",
+                "atom_center_dynamic": True,
+                # only isotropic mode has been tested
+                "is_rezero": False,
+                "bias_orbitals": False,
+                "use_last_layer": False,
+                "full_det": False,
+                "hidden_dims": ((64, 32, 32), (64, 32, 32), (64, 32, 32)),
+                "determinants": 8,
+                "distance_type": "tri",  # 'nu' or 'tri'
             },
-            "debug": {
-                "deterministic": False,  # Use a deterministic seed.
+            "twist": (
+                0.25,
+                0.25,
+                0.25,
+            ),  # Define the twist of wavefunction, twists are given in terms
+            # of fractions of supercell reciprocal vectors
+        },
+        "debug": {
+            "deterministic": False,  # Use a deterministic seed.
+        },
+        "crystal": {
+            "structure": "bcc_H",  # crystal structure type: 'bcc', etc.
+            "rs": 1.31,  # Wigner-Seitz radius
+            "ncopy": [1, 1, 1],  # supercell size
+            "basis": "sto-3g",  # basis
+            "kpts": {
+                "number": [1, 1, 1],  # k-points grid
+                "twist_index": 0,  # twist index in the k-points list
+                "length": 1,
+                "weights": 1.0,
             },
-            "crystal": {
-                "structure": "bcc_H",  # crystal structure type: 'bcc', etc.
-                "rs": 1.31,  # Wigner-Seitz radius
-                "ncopy": [1, 1, 1],  # supercell size
-                "basis": "sto-3g",  # basis
-                "kpts": {
-                    "number": [1, 1, 1],  # k-points grid
-                    "twist_index": 0,  # twist index in the k-points list
-                    "length": 1,
-                    "weights": 1.0,
-                },
-                "lattice": {
-                    # 'angle' or 'partial_angle' or 'diag', 'partial_angle' means
-                    # we do not optimize angle
-                    "mode": "angle",
-                    "a": 1.0,
-                    "b": 1.0,
-                    "c": 1.0,
-                    "alpha": 90.0,
-                    "beta": 90.0,
-                    "gamma": 90.0,
-                },
-                "cif_path": None,  # path to the cif file
-                "is_deuterium": False,
-                "natm": None,
+            "lattice": {
+                # 'angle' or 'partial_angle' or 'diag', 'partial_angle' means
+                # we do not optimize angle
+                "mode": "angle",
+                "a": 1.0,
+                "b": 1.0,
+                "c": 1.0,
+                "alpha": 90.0,
+                "beta": 90.0,
+                "gamma": 90.0,
             },
-        }
-    )
+            "cif_path": None,  # path to the cif file
+            "is_deuterium": False,
+            "natm": None,
+        },
+    })
 
     return cfg
 
@@ -556,19 +554,17 @@ def _convert_dict_to_dataclass(dc, data_dict):
 
     """
     field_types = {f.name: f.type for f in dataclasses.fields(dc)}
-    return dc(
-        **{
-            f: (
-                _convert_dict_to_dataclass(field_types[f], data_dict[f])
-                if dataclasses.is_dataclass(field_types[f])
-                and isinstance(data_dict.get(f), dict | ml_collections.ConfigDict)
-                else data_dict.get(f)
-            )  # Use .get for robustness if needed
-            for f in field_types
-            # Add filtering or error handling if dict keys might not match dataclass fields
-            if f in data_dict
-        }
-    )
+    return dc(**{
+        f: (
+            _convert_dict_to_dataclass(field_types[f], data_dict[f])
+            if dataclasses.is_dataclass(field_types[f])
+            and isinstance(data_dict.get(f), dict | ml_collections.ConfigDict)
+            else data_dict.get(f)
+        )  # Use .get for robustness if needed
+        for f in field_types
+        # Add filtering or error handling if dict keys might not match dataclass fields
+        if f in data_dict
+    })
 
 
 def config_dict_to_dataclass(cfg: ml_collections.ConfigDict) -> BornFreeConfig:

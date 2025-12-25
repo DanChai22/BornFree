@@ -33,9 +33,7 @@ def _get_kpts_str(config: base_config.BornFreeConfig) -> str:
     return "".join(str(n) for n in config.crystal.kpts.number)
 
 
-def _get_crystal_components(
-    config: base_config.BornFreeConfig, include_lattice_mode: bool = False
-) -> list[str]:
+def _get_crystal_components(config: base_config.BornFreeConfig, include_lattice_mode: bool = False) -> list[str]:
     """Generate crystal structure parameter components."""
     components = [
         f"{config.crystal.structure}",
@@ -68,9 +66,7 @@ def _get_mcmc_components(config: base_config.BornFreeConfig) -> list[str]:
     ]
 
 
-def _get_annealing_components(
-    config: base_config.BornFreeConfig, include_final_temp: bool = False
-) -> list[str]:
+def _get_annealing_components(config: base_config.BornFreeConfig, include_final_temp: bool = False) -> list[str]:
     """Generate annealing parameter components."""
     components = [
         f"{config.mcmc.annealing.annealing_type}",
@@ -109,38 +105,23 @@ def get_save_name(config: base_config.BornFreeConfig) -> str:
             f"{config.strategy.geo_opt_steps}",
         ]
         strategy_str = "_".join(strategy_components)
-        folder_name = (
-            f"{base_path}/"
-            f"{network_str}_nk{kpts_str}/"
-            f"{config.crystal.natm}atoms/"
-            f"{strategy_str}"
-        )
+        folder_name = f"{base_path}/{network_str}_nk{kpts_str}/{config.crystal.natm}atoms/{strategy_str}"
     else:
         folder_name = f"{base_path}/{network_str}_nk{kpts_str}"
 
     # Geometry parameters
-    geo_str = "_".join(
-        [
-            f"{config.target_pressure}",
-            f"{config.crystal.lattice.mode}",
-        ]
-    )
+    geo_str = "_".join([
+        f"{config.target_pressure}",
+        f"{config.crystal.lattice.mode}",
+    ])
 
     # Collect all parameter strings
-    crystal_params = "_".join(
-        _get_crystal_components(config, include_lattice_mode=False)
-    )
+    crystal_params = "_".join(_get_crystal_components(config, include_lattice_mode=False))
     training_str = "_".join(_get_training_components(config))
     mcmc_str = "_".join(_get_mcmc_components(config))
-    annealing_str = "_".join(
-        _get_annealing_components(config, include_final_temp=False)
-    )
+    annealing_str = "_".join(_get_annealing_components(config, include_final_temp=False))
 
     # Construct final file name
-    file_name = (
-        f"{folder_name}/"
-        f"{crystal_params}_{geo_str}_{training_str}_{mcmc_str}_{annealing_str}_"
-        f"{config.precision}"
-    )
+    file_name = f"{folder_name}/{crystal_params}_{geo_str}_{training_str}_{mcmc_str}_{annealing_str}_{config.precision}"
 
     return file_name

@@ -201,17 +201,13 @@ def get_config(input_str):
     # Configure crystal structure parameters
     cfg.crystal.cif_path = cif_path
     structure = cfg.crystal.cif_path.split("/")[-1].split(".")[0].split("_")[0]
-    cfg.crystal.structure = (
-        f"{structure}_D" if cfg.crystal.is_deuterium else f"{structure}_H"
-    )
+    cfg.crystal.structure = f"{structure}_D" if cfg.crystal.is_deuterium else f"{structure}_H"
     cfg.crystal.rs = float(rs)
     cfg.crystal.ncopy = [int(Sx), int(Sy), int(Sz)]
     ncopy_array = np.array(cfg.crystal.ncopy)
     ase_cell = ase.io.read(cfg.crystal.cif_path)
     cell = make_cell(ase_cell, cfg.crystal.rs, ncopy_array)
-    kpts_class = cell.make_kpts(
-        cfg.crystal.kpts.number, with_gamma_point=False, space_group_symmetry=True
-    )
+    kpts_class = cell.make_kpts(cfg.crystal.kpts.number, with_gamma_point=False, space_group_symmetry=True)
     twist_list = kpts_class.kpts_scaled_ibz
     cfg.crystal.kpts.length = len(twist_list)
     cfg.crystal.kpts.weights = kpts_class.weights_ibz[cfg.crystal.kpts.twist_index]
@@ -226,22 +222,13 @@ def get_config(input_str):
     cfg.crystal.lattice.b = float(np.linalg.norm(latvec[1]))
     cfg.crystal.lattice.c = float(np.linalg.norm(latvec[2]))
     cfg.crystal.lattice.alpha = float(
-        np.arccos(
-            np.dot(latvec[1], latvec[2])
-            / (cfg.crystal.lattice.b * cfg.crystal.lattice.c)
-        )
+        np.arccos(np.dot(latvec[1], latvec[2]) / (cfg.crystal.lattice.b * cfg.crystal.lattice.c))
     )
     cfg.crystal.lattice.beta = float(
-        np.arccos(
-            np.dot(latvec[0], latvec[2])
-            / (cfg.crystal.lattice.a * cfg.crystal.lattice.c)
-        )
+        np.arccos(np.dot(latvec[0], latvec[2]) / (cfg.crystal.lattice.a * cfg.crystal.lattice.c))
     )
     cfg.crystal.lattice.gamma = float(
-        np.arccos(
-            np.dot(latvec[0], latvec[1])
-            / (cfg.crystal.lattice.a * cfg.crystal.lattice.b)
-        )
+        np.arccos(np.dot(latvec[0], latvec[1]) / (cfg.crystal.lattice.a * cfg.crystal.lattice.b))
     )
     cfg.crystal.lattice.mode = lattice_mode
     cfg.crystal.natm = cell.natm
@@ -270,9 +257,7 @@ def get_config(input_str):
     cfg.mcmc.annealing.local_sampling = bool(int(local_sampling))
 
     # Set MCMC parameters
-    cfg.mcmc.mcmc_type = (
-        "electron_only" if cfg.nuclear_treatment == "fixed" else "gibbs"
-    )
+    cfg.mcmc.mcmc_type = "electron_only" if cfg.nuclear_treatment == "fixed" else "gibbs"
 
     cfg.mcmc.steps = 10
     cfg.mcmc.iter = 10

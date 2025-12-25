@@ -134,9 +134,7 @@ def set_symmetry_lat(supercell, sym_type="minimal"):
     elif sym_type == "fcc":
         mat = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1]])
     elif sym_type == "bcc":
-        mat = np.array(
-            [[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, -1, 0], [1, 0, -1], [0, 1, -1]]
-        )
+        mat = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, -1, 0], [1, 0, -1], [0, 1, -1]])
     elif sym_type == "hexagonal":
         mat = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [-1, -1, 0]])
     else:

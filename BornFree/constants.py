@@ -64,6 +64,7 @@ def wrap_if_pmap(p_func):
     Returns:
         Wrapped function that only applies pmap when axis_name is valid
     """
+
     def p_func_if_pmap(obj, axis_name):
         try:
             core.axis_frame(axis_name)

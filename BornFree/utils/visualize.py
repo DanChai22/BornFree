@@ -68,9 +68,7 @@ vconvert = jax.vmap(
     in_axes=(None, 0, None),
     out_axes=(0, None),
 )
-batched_shift_atom_first = jax.vmap(
-    shift_atom_first, in_axes=(0, None, None), out_axes=0
-)
+batched_shift_atom_first = jax.vmap(shift_atom_first, in_axes=(0, None, None), out_axes=0)
 
 
 def get_rs(lattice, cfg: base_config.BornFreeConfig) -> tuple[float, float]:
@@ -128,9 +126,7 @@ def _calculate_basic_metrics(
 
         # Log lattice parameters
         for i, param in enumerate(
-            ["a", "b", "c", "alpha", "beta", "gamma"]
-            if cfg.crystal.lattice.mode == "angle"
-            else ["a", "b", "c"]
+            ["a", "b", "c", "alpha", "beta", "gamma"] if cfg.crystal.lattice.mode == "angle" else ["a", "b", "c"]
         ):
             metrics[f"params_cell/{param}"] = float(cellpar[i])
     else:
@@ -144,16 +140,12 @@ def _calculate_basic_metrics(
         metrics["estimated_pressure"] = p
 
     metrics["rs"] = rs_current
-    metrics["volume per atom[Å^3]"] = (
-        volume * constants.BOHR_TO_ANGSTROM**3 / cfg.crystal.natm
-    )
+    metrics["volume per atom[Å^3]"] = volume * constants.BOHR_TO_ANGSTROM**3 / cfg.crystal.natm
 
     return metrics, rs_current, lattice_current
 
 
-def _get_reference_coordinates_and_lattice(
-    rs: float, cfg: base_config.BornFreeConfig
-) -> Array:
+def _get_reference_coordinates_and_lattice(rs: float, cfg: base_config.BornFreeConfig) -> Array:
     """Get reference atomic coordinates."""
     simulation_cell = _get_simulation_cell(rs, cfg)
     reference_lattice = jnp.array(simulation_cell.lattice_vectors())
@@ -214,14 +206,10 @@ def _get_analysis_result(
 ) -> AnalysisResult:
     """Unified function to get analysis results for different simulation types."""
     # Calculate basic metrics and lattice
-    metrics, rs_current, lattice = _calculate_basic_metrics(
-        cellpar, cfg, rs, kinetic, potential
-    )
+    metrics, rs_current, lattice = _calculate_basic_metrics(cellpar, cfg, rs, kinetic, potential)
 
     # Get reference coordinates
-    reference_coords, reference_lattice = _get_reference_coordinates_and_lattice(
-        rs_current, cfg
-    )
+    reference_coords, reference_lattice = _get_reference_coordinates_and_lattice(rs_current, cfg)
 
     # Handle coordinate processing based on simulation type
     batched_coords, batch_size = _process_coordinate_data(data, cellpar, cfg, lattice)
@@ -299,11 +287,7 @@ def _create_projection_subplot(
         xlabel, ylabel = labels[projection]
 
         if x_c is not None:
-            ref_x, ref_y = (
-                (x_c, y_c)
-                if projection == "xy"
-                else ((y_c, z_c) if projection == "yz" else (x_c, z_c))
-            )
+            ref_x, ref_y = (x_c, y_c) if projection == "xy" else ((y_c, z_c) if projection == "yz" else (x_c, z_c))
             ax.scatter(ref_x, ref_y, c="r", label=f"step={t} Mean Configuration")
 
         scatter = ax.scatter(
@@ -414,9 +398,7 @@ def identify_molecule(
     return jnp.asarray(molecules)
 
 
-def calculate_bond(
-    molecules_index: Array, batched_atoms_coords: Array, Ls: Array
-) -> tuple[Array, Array]:
+def calculate_bond(molecules_index: Array, batched_atoms_coords: Array, Ls: Array) -> tuple[Array, Array]:
     """Calculate bond vectors and lengths for molecules.
 
     Args:
@@ -441,9 +423,7 @@ def calculate_bond(
     return vectors, norm
 
 
-def calculate_direction_vector(
-    molecules_index: Array, batched_atoms_coords: Array, Ls: Array
-) -> Array:
+def calculate_direction_vector(molecules_index: Array, batched_atoms_coords: Array, Ls: Array) -> Array:
     """Calculate the direction vector of the molecules."""
     vectors, norm = calculate_bond(molecules_index, batched_atoms_coords, Ls)
     # Avoid division by zero by replacing zeros with ones.
@@ -717,9 +697,7 @@ def _plot_cos_theta_distribution(
     ax.plot(cos_theta_centers, cos_theta_dist, "r-", linewidth=2)
     ax.set_xlabel(r"$\cos(\theta)$", fontsize=14)
     ax.set_ylabel(r"$P(\cos(\theta))$", fontsize=14)
-    ax.set_title(
-        f"Polar Angle ($\\cos(\\theta)$) Distribution {title_suffix}", fontsize=16
-    )
+    ax.set_title(f"Polar Angle ($\\cos(\\theta)$) Distribution {title_suffix}", fontsize=16)
     ax.grid(True, alpha=0.3)
 
     # Add secondary x-axis with theta in degrees
@@ -766,16 +744,10 @@ def plot_orientation_distributions(
         return None
     metrics["n_molecules_ratio"] = molecules_index.shape[0] / cfg.crystal.natm * 2
 
-    g, theta_edges, phi_edges = calculate_distribution_function(
-        molecules_index, batched_atoms_coords, Ls
-    )
+    g, theta_edges, phi_edges = calculate_distribution_function(molecules_index, batched_atoms_coords, Ls)
 
-    phi_dist, phi_centers = calculate_phi_distribution(
-        molecules_index, batched_atoms_coords, Ls
-    )
-    cos_theta_dist, cos_theta_centers = calculate_cos_theta_distribution(
-        molecules_index, batched_atoms_coords, Ls
-    )
+    phi_dist, phi_centers = calculate_phi_distribution(molecules_index, batched_atoms_coords, Ls)
+    cos_theta_dist, cos_theta_centers = calculate_cos_theta_distribution(molecules_index, batched_atoms_coords, Ls)
 
     save_name_list = [
         "orientation_distribution_function",
@@ -787,15 +759,11 @@ def plot_orientation_distributions(
     base_path = os.path.join(cfg.log.save_path, "_".join(save_name_list))
 
     # Plot full distribution
-    fig = _plot_orientation_distribution(
-        g, theta_edges, phi_edges, save_path=base_path + ".png"
-    )
+    fig = _plot_orientation_distribution(g, theta_edges, phi_edges, save_path=base_path + ".png")
     metrics["orientation_distribution_function"] = wandb.Image(fig)
     plt.show()
 
-    fig = _plot_phi_distribution(
-        phi_dist, phi_centers, title_suffix="(1D)", save_path=base_path + "_phi.png"
-    )
+    fig = _plot_phi_distribution(phi_dist, phi_centers, title_suffix="(1D)", save_path=base_path + "_phi.png")
     metrics["phi_distribution"] = wandb.Image(fig)
     plt.show()
 
@@ -863,9 +831,7 @@ def _unified_plot_analysis(
         )
 
 
-def _plot_analysis_xrd(
-    result: AnalysisResult, cfg: base_config.BornFreeConfig, plot_config: PlotConfig
-) -> None:
+def _plot_analysis_xrd(result: AnalysisResult, cfg: base_config.BornFreeConfig, plot_config: PlotConfig) -> None:
     """Plot X-ray diffraction pattern analysis."""
     xrd = estimator.get_xrd(
         wavelength=constants.DEFAULT_XRD_WAVELENGTH,
@@ -875,9 +841,7 @@ def _plot_analysis_xrd(
     )
 
     # Calculate XRD for current data
-    d_spacing, averaged_intensity = xrd.compute_xrd(
-        result.batched_coords, result.lattice, n_samples=result.batch_size
-    )
+    d_spacing, averaged_intensity = xrd.compute_xrd(result.batched_coords, result.lattice, n_samples=result.batch_size)
     # Create plot
     plt.figure(figsize=(8, 4))
     if d_spacing is not None:
@@ -905,22 +869,16 @@ def plot_npt_result(
     potential: float | None,
 ) -> Atoms:
     """Plot various analysis results for NPT simulation."""
-    params = jax.tree_util.tree_map(
-        lambda x: jnp.mean(x, axis=0, keepdims=False), params
-    )
+    params = jax.tree_util.tree_map(lambda x: jnp.mean(x, axis=0, keepdims=False), params)
     cellpar = params.get("cell", None)
     data = data.reshape((-1, cfg.batch_size, data.shape[-1]))
 
     # Get unified analysis result
-    result = _get_analysis_result(
-        data, cellpar, cfg, rs=None, kinetic=kinetic, potential=potential
-    )
+    result = _get_analysis_result(data, cellpar, cfg, rs=None, kinetic=kinetic, potential=potential)
 
     # Save CIF file
     label_list = _create_label_list(cfg)
-    result.ase_cell.write(
-        os.path.join(cfg.log.save_path, "_".join(label_list) + ".cif")
-    )
+    result.ase_cell.write(os.path.join(cfg.log.save_path, "_".join(label_list) + ".cif"))
 
     # Unified plotting
     _unified_plot_analysis(result, cfg, t)
@@ -943,9 +901,7 @@ def plot_nvt_quantum_result(
 
     # Save CIF file
     label_list = _create_label_list(cfg)
-    result.ase_cell.write(
-        os.path.join(cfg.log.save_path, "_".join(label_list) + ".cif")
-    )
+    result.ase_cell.write(os.path.join(cfg.log.save_path, "_".join(label_list) + ".cif"))
 
     # Unified plotting (skip mean projections and orientations for NVT quantum)
     _unified_plot_analysis(result, cfg, t, plot_orientations=False)

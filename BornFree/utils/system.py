@@ -58,9 +58,7 @@ class Atom:
     )
     charge = attr.ib(type=float, converter=float)
     atomic_number = attr.ib(type=int, converter=int)
-    units = attr.ib(
-        type=str, default="bohr", validator=attr.validators.in_(["bohr", "angstrom"])
-    )
+    units = attr.ib(type=str, default="bohr", validator=attr.validators.in_(["bohr", "angstrom"]))
 
     @charge.default
     def _set_default_charge(self):
